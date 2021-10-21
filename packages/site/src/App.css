@@ -1,0 +1,9 @@
+button {
+    background-color: var(--color-darkmode-button-bg);
+    color: var(--color-darkmode-button-text);
+    font-size: var(--font-button-bounded-font-size);
+}
+
+body {
+    font-family: Carbon;
+}

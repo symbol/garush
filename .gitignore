@@ -1,0 +1,10 @@
+**/.nyc_output
+**/dist
+**/lib
+**/node_modules
+/.idea/
+**/.eslintcache
+**/coverage
+**/ts-docs/
+*.iml
+
