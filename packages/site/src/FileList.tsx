@@ -1,43 +1,32 @@
-import { FileMetadata, YamlUtils } from 'garush-storage';
-import React, { useContext } from 'react';
+import { FileMetadata } from 'garush-storage';
+import { Stack } from 'react-bootstrap';
 import { Transaction } from 'symbol-sdk';
-import { ConfigurationContext } from './App';
-import FilePanel from './FilePanel';
+import { Network } from './App';
+import FileCard from './FileCard';
+import Loading from './Loading';
 
-export default function FileList({ files }: { files?: { metadata: FileMetadata; rootTransaction: Transaction }[] }) {
-    const { explorerUrl } = useContext(ConfigurationContext);
+export default function FileList({
+    files,
+    network,
+}: {
+    files?: { metadata: FileMetadata; rootTransaction: Transaction }[];
+    network: Network;
+}) {
     if (files === undefined) {
-        return <div>Loading files</div>;
+        return <Loading />;
     }
     if (!files.length) {
         return <div>No files! You can upload some!</div>;
     }
     return (
-        <ul>
+        <Stack gap={3} direction="horizontal">
             {files.map((file, fileIndex) => {
                 const hash = file.rootTransaction.transactionInfo?.hash;
                 if (!hash) {
                     throw new Error('Root hash must exist!');
                 }
-                return (
-                    <li key={fileIndex}>
-                        <FilePanel metadata={file.metadata} rootHash={hash} />
-                        <br />
-                        <pre>{YamlUtils.toYaml(file.metadata)}</pre>
-                        <br />
-                        Root Transaction: <a href={`${explorerUrl}/transactions/${hash}`}>{hash}</a> <br />
-                        <a href={`explorer/${hash}`}>Image Link</a>
-                        {file.metadata.hashes.map((dataHash, dataIndex) => {
-                            return (
-                                <div key={dataIndex}>
-                                    Data Transaction {dataIndex + 1}: <a href={`${explorerUrl}/transactions/${dataHash}`}>{dataHash}</a>
-                                </div>
-                            );
-                        })}
-                        <br />
-                    </li>
-                );
+                return <FileCard key={fileIndex} file={file} network={network} />;
             })}
-        </ul>
+        </Stack>
     );
 }

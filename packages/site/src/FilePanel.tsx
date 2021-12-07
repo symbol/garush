@@ -1,48 +1,41 @@
-import { FileMetadata } from 'garush-storage';
+import { FileMetadata, Utils } from 'garush-storage';
 import React, { useContext, useEffect, useState } from 'react';
-import { ConfigurationContext, StorageServiceContext } from './App';
+import { Image } from 'react-bootstrap';
+import { ConfigurationContext, Network } from './App';
+import Loading from './Loading';
 
-export default function FilePanel({ metadata, rootHash }: { metadata: FileMetadata; rootHash: string }) {
-    const service = useContext(StorageServiceContext);
-    const { explorerUrl } = useContext(ConfigurationContext);
+type ContentData = {
+    content: Uint8Array;
+    dataTransactionsTotalSize: number;
+};
+export default function FilePanel({ metadata, network }: { metadata: FileMetadata; network: Network }) {
+    const { storageService } = useContext(ConfigurationContext)[network];
 
-    const [content, setContent] = useState<
-        | {
-              content: Uint8Array;
-              dataTransactionsTotalSize: number;
-          }
-        | undefined
-    >(undefined);
+    const [content, setContent] = useState<ContentData | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-        service.loadImageFromMetadata(metadata).then(
+        storageService.loadImageFromMetadata(metadata).then(
             (r) => setContent(r),
-            (e) => setError(e.message),
+            (e) => setError(Utils.getMessageFromError(e)),
         );
-    }, [service, metadata]);
+    }, [storageService, metadata]);
     if (error) {
-        return <div>Error: {error}</div>;
+        return <div>Cannot load file: {error}</div>;
     }
-    if (content) {
+
+    function getFileWidget(content: ContentData) {
         const blob = new Blob([content.content.buffer], { type: metadata.mime });
         if (metadata.mime.startsWith('image/')) {
             const objectUrl = URL.createObjectURL(blob);
-            return (
-                <a href={`${explorerUrl}/transactions/${rootHash}`}>
-                    <img alt={metadata.name} src={objectUrl} /> {content.dataTransactionsTotalSize}
-                </a>
-            );
+            return <Image alt={metadata.name} src={objectUrl} fluid />;
         }
         if (metadata.mime.startsWith('audio/')) {
             const objectUrl = URL.createObjectURL(blob);
             return (
-                <a href={`${explorerUrl}/transactions/${rootHash}`}>
-                    <audio controls={true}>
-                        <source src={objectUrl} type={metadata.mime} />
-                    </audio>{' '}
-                    {content.dataTransactionsTotalSize}
-                </a>
+                <audio controls={true}>
+                    <source src={objectUrl} type={metadata.mime} />
+                </audio>
             );
         } else {
             const objectUrl = URL.createObjectURL(blob);
@@ -53,5 +46,9 @@ export default function FilePanel({ metadata, rootHash }: { metadata: FileMetada
             );
         }
     }
-    return <div>Loading</div>;
+
+    if (content) {
+        return <span title={`${content.dataTransactionsTotalSize} Bytes`}>{getFileWidget(content)}</span>;
+    }
+    return <Loading />;
 }

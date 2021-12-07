@@ -22,9 +22,11 @@ import {
     TransactionType,
     TransferTransaction,
 } from 'symbol-sdk';
+import { HeaderType } from './HeaderType';
 import { FileParser, FileParserManager, SplitResult } from './parser';
 import { Utils } from './Utils';
 import { YamlUtils } from './YamlUtils';
+
 export interface FileMetadata {
     type: string;
     version: number;
@@ -33,8 +35,8 @@ export interface FileMetadata {
     size: number;
     mime: string;
     hashes: string[];
-    header?: Record<string, unknown>;
-    userData?: Record<string, unknown>;
+    header?: Record<string, HeaderType>;
+    userData?: Record<string, HeaderType>;
 }
 
 export interface Logger {
@@ -47,17 +49,26 @@ export class ConsoleLogger implements Logger {
     }
 }
 
-export type PublicAccountParam = string | PublicAccount | Address;
+export type PublicAddressParam = string | PublicAccount | Address;
+export type PublicAccountParam = string | PublicAccount;
 export type PrivateAccountParam = string | Account;
 
-interface StoreImageParams {
+export interface StoreFileParams {
     signerPrivateAccount: PrivateAccountParam;
     recipientPublicAccount: PublicAccountParam;
+    cosignerAccounts?: PrivateAccountParam[];
     content: Uint8Array;
     name: string;
     mime: string;
-    userData?: Record<string, unknown>;
-    feeMultiplier?: number;
+    userData?: Record<string, HeaderType>;
+    feeMultiplier: number;
+    logger?: ConsoleLogger;
+    extraTransactions?: Transaction[];
+}
+
+export interface StoreFileResponse {
+    metadata: FileMetadata;
+    rootTransactionHash: string;
     logger?: ConsoleLogger;
 }
 
@@ -66,16 +77,18 @@ export class StorageService {
 
     constructor(private readonly repositoryFactory: RepositoryFactory) {}
 
-    public async storeImage({
+    public async storeFile({
         signerPrivateAccount,
         recipientPublicAccount,
         content,
         name,
         mime,
-        feeMultiplier = 1000,
+        feeMultiplier,
         userData,
+        cosignerAccounts = [],
+        extraTransactions = [],
         logger = new ConsoleLogger(),
-    }: StoreImageParams): Promise<{ metadata: FileMetadata; rootTransactionHash: string }> {
+    }: StoreFileParams): Promise<StoreFileResponse> {
         const epochAdjustment = await this.repositoryFactory.getEpochAdjustment().toPromise();
         const deadline = Deadline.create(epochAdjustment);
         const generationHash = await this.repositoryFactory.getGenerationHash().toPromise();
@@ -129,10 +142,16 @@ export class StorageService {
             dataRecipientAddress,
             networkType,
             feeMultiplier,
+            extraTransactions,
+            cosignerAccounts?.length,
             logger,
         );
-        const rootTransaction = signerAccount.sign(metadataTransaction, generationHash);
-        logger?.log(`Root  transaction ${rootTransaction.hash} signed`);
+        const rootTransaction = signerAccount.signTransactionWithCosignatories(
+            metadataTransaction,
+            cosignerAccounts.map((c) => StorageService.getAccount(c, networkType)),
+            generationHash,
+        );
+        logger?.log(`Root transaction ${rootTransaction.hash} signed`);
         if (true) {
             // For speed, all in parallel
             await this.announceAll([...signedTransactions, rootTransaction], true, logger);
@@ -168,54 +187,43 @@ export class StorageService {
         dataRecipientAddress: Address,
         networkType: NetworkType,
         feeMultiplier: number,
+        extraTransactions: Transaction[],
+        requiredCosignatures: number,
         logger?: Logger,
-    ): TransferTransaction | AggregateTransaction {
-        const metadata = YamlUtils.toYaml(fileMetadata);
-        const metadataMessage = PlainMessage.create(metadata);
+    ): AggregateTransaction {
+        const { hashes, ...rest } = fileMetadata;
+        const metadataWithoutHashes = YamlUtils.toYaml(rest);
+        const metadataMessageWithoutHashes = PlainMessage.create(metadataWithoutHashes);
+        const hashesSplit = _.chunk(Convert.hexToUint8(hashes.join('')), 1024);
+        const transferTransaction = TransferTransaction.create(deadline, recipientAddress, [], metadataMessageWithoutHashes, networkType);
+        const innerTransactions = [
+            transferTransaction,
+            ...hashesSplit.map((hashes) => {
+                return TransferTransaction.create(
+                    deadline,
+                    dataRecipientAddress,
+                    [],
+                    RawMessage.create(Uint8Array.from(hashes)),
+                    networkType,
+                );
+            }),
+        ];
+        extraTransactions.forEach((t) => {
+            logger?.log(`Adding ${t.constructor.name} type ${t.type} added to aggregate transactions`);
+        });
+        const aggregate = AggregateTransaction.createComplete(
+            deadline,
+            [...innerTransactions.map((t) => t.toAggregate(signerAccount)), ...extraTransactions],
+            networkType,
+            [],
+        );
 
-        if (metadataMessage.toBuffer().length > 1024) {
-            const { hashes, ...rest } = fileMetadata;
-            const metadataWithoutHashes = YamlUtils.toYaml(rest);
-            const metadataMessageWithoutHashes = PlainMessage.create(metadataWithoutHashes);
-            const hashesSplit = _.chunk(Convert.hexToUint8(hashes.join('')), 1024);
-            const transferTransaction = TransferTransaction.create(
-                deadline,
-                recipientAddress,
-                [],
-                metadataMessageWithoutHashes,
-                networkType,
-            );
-            const innerTransactions = [
-                transferTransaction,
-                ...hashesSplit.map((hashes) => {
-                    return TransferTransaction.create(
-                        deadline,
-                        dataRecipientAddress,
-                        [],
-                        RawMessage.create(Uint8Array.from(hashes)),
-                        networkType,
-                    );
-                }),
-            ];
-            const aggregate = AggregateTransaction.createComplete(
-                deadline,
-                innerTransactions.map((t) => t.toAggregate(signerAccount)),
-                networkType,
-                [],
-            );
-
-            logger?.log(`Created aggregate root transaction transaction with ${aggregate.innerTransactions.length} inner transactions`);
-            return aggregate.setMaxFeeForAggregate(feeMultiplier, 0);
-        } else {
-            const transferTransaction = TransferTransaction.create(deadline, recipientAddress, [], metadataMessage, networkType);
-
-            logger?.log(`Created transfer root transaction transaction`);
-            return transferTransaction.setMaxFee(feeMultiplier) as TransferTransaction;
-        }
+        logger?.log(`Created aggregate root transaction transaction with ${aggregate.innerTransactions.length} inner transactions`);
+        return aggregate.setMaxFeeForAggregate(feeMultiplier, requiredCosignatures);
     }
 
     public async loadImagesMetadata(
-        addressParam: PublicAccountParam,
+        addressParam: PublicAddressParam,
     ): Promise<{ metadata: FileMetadata; rootTransaction: TransferTransaction | AggregateTransaction }[]> {
         const networkType = await this.repositoryFactory.getNetworkType().toPromise();
         const address = StorageService.getAddress(addressParam, networkType);
@@ -319,7 +327,7 @@ export class StorageService {
             const transferTransactionRoot = transactionRoot as TransferTransaction;
             try {
                 const metadata = YamlUtils.fromYaml(transferTransactionRoot.message.payload) as FileMetadata;
-                if (metadata.type != 'garush') {
+                if (!metadata || metadata.type != 'garush') {
                     return undefined;
                 }
                 return metadata;
@@ -332,11 +340,10 @@ export class StorageService {
             try {
                 const innerTransactions = aggregateTransactionRoot.innerTransactions as TransferTransaction[];
                 const metadata = YamlUtils.fromYaml(innerTransactions[0].message.payload) as FileMetadata;
-                if (metadata.type != 'garush') {
+                if (!metadata || metadata.type != 'garush') {
                     return undefined;
                 }
-                const hashes = innerTransactions
-                    .slice(1)
+                const hashes = _.takeWhile(innerTransactions.slice(1), (t) => t.type === TransactionType.TRANSFER)
                     .map((t) => t.message.toDTO())
                     .join('');
                 metadata.hashes = hashes.match(/.{1,64}/g) as string[];
@@ -356,6 +363,11 @@ export class StorageService {
         );
         const basicAnnounce = async (signedTransaction: SignedTransaction) => {
             try {
+                listener
+                    .status(PublicAccount.createFromPublicKey(signedTransaction.signerPublicKey, signedTransaction.networkType).address)
+                    .subscribe((t) => {
+                        logger.log(`There has been an error ${JSON.stringify(t, null, 2)}`);
+                    });
                 logger.log(`Announcing transaction ${signedTransaction.hash}`);
                 await transactionService.announce(signedTransaction, listener).toPromise();
                 logger.log(`Transaction ${signedTransaction.hash} confirmed`);
@@ -378,13 +390,18 @@ export class StorageService {
         }
     }
 
-    public static getAddress(publicAccountParam: PublicAccountParam, networkType: NetworkType): Address {
+    public static getAddress(publicAccountParam: PublicAddressParam, networkType: NetworkType): Address {
         if (typeof publicAccountParam === 'string')
             return Convert.isHexString(publicAccountParam, 64)
                 ? PublicAccount.createFromPublicKey(publicAccountParam, networkType).address
                 : Address.createFromRawAddress(publicAccountParam);
         const address = (publicAccountParam as PublicAccount).address || (publicAccountParam as Address);
         return Address.createFromRawAddress(address.plain());
+    }
+
+    public static getPublicAccount(publicAccountParam: PublicAccountParam, networkType: NetworkType): PublicAccount {
+        if (typeof publicAccountParam === 'string') return PublicAccount.createFromPublicKey(publicAccountParam, networkType);
+        return publicAccountParam;
     }
     public static getAccount(privateAccountParam: PrivateAccountParam, networkType: NetworkType): Account {
         if (typeof privateAccountParam === 'string') return Account.createFromPrivateKey(privateAccountParam, networkType);

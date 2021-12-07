@@ -1,6 +1,8 @@
+import { HeaderType } from '../HeaderType';
+
 export interface SplitResult {
     multiLevelChunks: Uint8Array[][];
-    header?: Record<string, unknown>;
+    header?: Record<string, HeaderType>;
 }
 
 export interface FileParser {

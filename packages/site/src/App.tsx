@@ -1,81 +1,114 @@
-import { FileMetadata, StorageService, Utils } from 'garush-storage';
-import React, { createContext, useContext, useState } from 'react';
-import { BrowserRouter as Router, Redirect, Route, Switch, useParams } from 'react-router-dom';
-import { Convert, Crypto, NetworkType, RepositoryFactoryHttp } from 'symbol-sdk';
-import { useAsyncEffect } from 'use-async-effect';
+import { NFTService, StorageService } from 'garush-storage';
+import React, { createContext } from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { Convert, Crypto, NetworkType, RepositoryFactory, RepositoryFactoryHttp } from 'symbol-sdk';
 import './App.css';
-import FilePanel from './FilePanel';
-import FilesContainer from './FilesContainer';
-import Site from './Site';
+import FileExplorer from './FileExplorer';
+import HomePage from './HomePage';
 import { URLHelpers } from './URLHelpers';
+export enum Network {
+    'garush' = 'garush',
+    'symbol' = 'symbol',
+}
 
-const networkType = NetworkType.TEST_NET;
-const epochAdjustment = 1634235224;
-const generationHash = '8E994B5DD6798CD34FEABE4B293DF355011E94CE8AADE8985FD6E736ACD94DC4';
-const url = 'https://demo-001.garush.dev:3001';
-const repositoryFactory = new RepositoryFactoryHttp(url, {
-    epochAdjustment: epochAdjustment,
-    generationHash: generationHash,
-    networkType: networkType,
-    websocketUrl: URLHelpers.httpToWsUrl(url) + '/ws',
-    websocketInjected: WebSocket,
+export interface Accounts {
+    brokerPrivateKey: string;
+    buyerPrivateKey: string;
+    secondBuyerPrivateKey: string;
+    artistPrivateKey: string;
+}
+const localStorage = window.localStorage;
+let storageKey = 'networkAccounts';
+let networkAccountsJson = localStorage.getItem(storageKey);
+
+const randomAccounts = (): Accounts => ({
+    brokerPrivateKey: Convert.uint8ToHex(Crypto.randomBytes(32)),
+    buyerPrivateKey: Convert.uint8ToHex(Crypto.randomBytes(32)),
+    secondBuyerPrivateKey: Convert.uint8ToHex(Crypto.randomBytes(32)),
+    artistPrivateKey: Convert.uint8ToHex(Crypto.randomBytes(32)),
 });
-const service = new StorageService(repositoryFactory);
-export const StorageServiceContext = createContext(service);
 
-const explorerUrl = 'https://explorer.garush.dev';
-const configuration = { explorerUrl: explorerUrl };
+if (!networkAccountsJson) {
+    networkAccountsJson = JSON.stringify({
+        [Network.symbol]: randomAccounts(),
+        [Network.garush]: randomAccounts(),
+    });
+    localStorage.setItem(storageKey, networkAccountsJson);
+}
+const networksAccounts: Record<Network, Accounts> = JSON.parse(networkAccountsJson);
+
+const symbolNetworkType = NetworkType.TEST_NET;
+const garushNetworkType = NetworkType.TEST_NET;
+const garushNetUrl = 'https://demo-001.garush.dev:3001';
+const garushFaucetUrl = 'https://faucet.garush.dev';
+const symbolFaucetUrl = 'https://testnet.symbol.tools';
+const symbolNetUrl = 'https://001-joey-dual.symboltest.net:3001';
+const garushExplorerUrl = 'https://explorer.garush.dev';
+const symbolExplorerUrl = 'https://testnet.symbol.fyi';
+
+const garushRepositoryFactory = new RepositoryFactoryHttp(garushNetUrl, {
+    websocketUrl: `${URLHelpers.httpToWsUrl(garushNetUrl)}/ws`,
+    websocketInjected: WebSocket,
+    networkType: garushNetworkType,
+});
+
+const symbolRepositoryFactory = new RepositoryFactoryHttp(symbolNetUrl, {
+    websocketUrl: `${URLHelpers.httpToWsUrl(symbolNetUrl)}/ws`,
+    websocketInjected: WebSocket,
+    networkType: symbolNetworkType,
+});
+
+const configuration: Record<
+    Network,
+    Accounts & {
+        explorerUrl: string;
+        faucetUrl: string;
+        mosaicDuration: number;
+        feeMultiplier: number;
+        repositoryFactory: RepositoryFactory;
+        networkType: NetworkType;
+        storageService: StorageService;
+    }
+> = {
+    [Network.garush]: {
+        ...networksAccounts[Network.garush],
+        explorerUrl: garushExplorerUrl,
+        faucetUrl: garushFaucetUrl,
+        feeMultiplier: 100,
+        mosaicDuration: 0,
+        repositoryFactory: garushRepositoryFactory,
+        networkType: garushNetworkType,
+        storageService: new StorageService(garushRepositoryFactory),
+    },
+    [Network.symbol]: {
+        ...networksAccounts[Network.symbol],
+        explorerUrl: symbolExplorerUrl,
+        faucetUrl: symbolFaucetUrl,
+        feeMultiplier: 100,
+        mosaicDuration: 0,
+        repositoryFactory: symbolRepositoryFactory,
+        networkType: symbolNetworkType,
+        storageService: new StorageService(symbolRepositoryFactory),
+    },
+};
 export const ConfigurationContext = createContext(configuration);
+
+const nftService = new NFTService(symbolRepositoryFactory, garushRepositoryFactory);
+export const NFTServiceContext = createContext(nftService);
 
 //http://localhost:3000/TBNBG3MERSXD5U3CSQEVTCMEUAFBSOVHVGIIDEQ
 
-const HomePage = () => {
-    const { account } = useParams<{ account: string }>();
-    return (
-        <Site>
-            <FilesContainer account={account} />
-        </Site>
-    );
-};
-
-const FileExplorer = () => {
-    const { transactionRootHash } = useParams<{ transactionRootHash: string }>();
-    const service = useContext(StorageServiceContext);
-    const [file, setFile] = useState<FileMetadata | undefined>(undefined);
-    const [error, setError] = useState<string | undefined>(undefined);
-
-    useAsyncEffect(async () => {
-        try {
-            const metadata = await service.loadMetadataFromHash(transactionRootHash);
-            setFile(metadata);
-        } catch (e) {
-            const message = Utils.getMessageFromError(e);
-            setError(`Cannot load file ${transactionRootHash}. Error: ${message}`);
-        }
-    }, [service, transactionRootHash]);
-    return (
-        <Site>
-            {error && <div>{error}</div>}
-            {file && <FilePanel metadata={file} rootHash={transactionRootHash} />}
-        </Site>
-    );
-};
-
 export default function App() {
     return (
-        <StorageServiceContext.Provider value={service}>
-            {' '}
+        <NFTServiceContext.Provider value={nftService}>
             <ConfigurationContext.Provider value={configuration}>
                 <Router>
                     <Switch>
-                        <Route exact path="/">
-                            <Redirect to={'/' + Convert.uint8ToHex(Crypto.randomBytes(32))} />
-                        </Route>
-                        <Route exact path="/:account" component={HomePage} />
-                        <Route exact path="/explorer/:transactionRootHash" component={FileExplorer} />
+                        <Route exact path="/" component={HomePage} />
+                        <Route exact path="/explorer/:network/:transactionRootHash" component={FileExplorer} />
                     </Switch>
                 </Router>
             </ConfigurationContext.Provider>
-        </StorageServiceContext.Provider>
+        </NFTServiceContext.Provider>
     );
 }

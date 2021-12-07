@@ -43,7 +43,7 @@ describe('StorageService', () => {
         const feeMultiplier = 1000;
         const content = await readFileSync(`${__dirname}/images/${fileName}`);
         console.log(fileMimeType);
-        await service.storeImage({
+        await service.storeFile({
             signerPrivateAccount: signerAccount.privateKey,
             recipientPublicAccount: recipientAccount.publicKey,
             content: content,

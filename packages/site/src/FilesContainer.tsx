@@ -1,26 +1,36 @@
-import { FileMetadata } from 'garush-storage';
-import React, { useContext, useEffect, useState } from 'react';
-import { Transaction } from 'symbol-sdk';
-import { StorageServiceContext } from './App';
+import { FileMetadata, Logger } from 'garush-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Button } from 'react-bootstrap';
+import { Convert, KeyPair, Transaction } from 'symbol-sdk';
+import { ConfigurationContext, Network } from './App';
+import ConfigurationContainer from './ConfigurationContainer';
 import FileList from './FileList';
-import FileUploader from './FileUploader';
 
-export default function FilesContainer({ account }: { account: string }) {
-    const service = useContext(StorageServiceContext);
+export const LoggerContext = createContext<Logger>({
+    log: (message: string) => {
+        console.log(message);
+    },
+});
+
+export default function FilesContainer({ network }: { network: Network }) {
+    const { storageService, artistPrivateKey } = useContext(ConfigurationContext)[network];
+    const publicAccount = Convert.uint8ToHex(KeyPair.createKeyPairFromPrivateKeyString(artistPrivateKey).publicKey);
     const [files, setFiles] = useState<{ metadata: FileMetadata; rootTransaction: Transaction }[] | undefined>(undefined);
     const refresh = () => {
-        service.loadImagesMetadata(account).then(setFiles);
+        storageService.loadImagesMetadata(publicAccount).then(setFiles);
     };
     useEffect(() => {
-        service.loadImagesMetadata(account).then(setFiles);
-    }, [service, account]);
+        storageService.loadImagesMetadata(publicAccount).then(setFiles);
+    }, [storageService, publicAccount]);
+
     return (
         <div>
-            <FileUploader account={account} refresh={refresh} />
-            <br />
-            <button onClick={refresh}>refresh!</button>
-            <br />
-            <FileList files={files} />
+            <h3>{network.toUpperCase()} Network</h3>
+            <Button onClick={refresh}>Refresh!</Button>
+            <h3>Accounts</h3>
+            <ConfigurationContainer network={network} />
+            <h3>Files</h3>
+            <FileList files={files} network={network} />
         </div>
     );
 }

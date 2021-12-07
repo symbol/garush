@@ -1,6 +1,10 @@
-import { Logger } from 'garush-storage';
 import React, { useContext, useState } from 'react';
-import { StorageServiceContext } from './App';
+import { Button, Form, Stack } from 'react-bootstrap';
+import AlertPopup from './AlertPopup';
+import { ConfigurationContext, Network, NFTServiceContext } from './App';
+import { LoggerContext } from './FilesContainer';
+import Loading from './Loading';
+
 interface FormFileMetadata {
     size: number;
     mime: string;
@@ -9,13 +13,14 @@ interface FormFileMetadata {
     contentSize: number;
 }
 
-export default function FileUploader({ account, refresh }: { account: string; refresh: () => void }) {
+export default function FileUploader({ network }: { network: Network }) {
     // On file select (from the pop up)
-    const service = useContext(StorageServiceContext);
+    const logger = useContext(LoggerContext);
+    const service = useContext(NFTServiceContext);
+    const { brokerPrivateKey, artistPrivateKey, mosaicDuration, feeMultiplier } = useContext(ConfigurationContext)[network];
     const [file, setFile] = useState<FormFileMetadata | undefined>(undefined);
     const [uploading, setUploading] = useState<boolean>(false);
     const [uploadError, setUploadError] = useState<string | undefined>(undefined);
-    const [logs, setLog] = useState<string>('');
 
     const onFileChange = async (event: any) => {
         const uploadedFile = event.target.files[0];
@@ -43,23 +48,18 @@ export default function FileUploader({ account, refresh }: { account: string; re
     };
 
     const onFileUpload = async () => {
-        let currentLogs = logs;
         if (!file || uploading) {
             return;
         }
-        const feeMultiplier = 100;
         setUploading(true);
         setUploadError(undefined);
-        const logger: Logger = {
-            log: (message) => {
-                currentLogs += message + '\n';
-                setLog(currentLogs);
-            },
-        };
         try {
-            await service.storeImage({
-                signerPrivateAccount: '0F1F0D1B17E115C507543CEC0D75A2686B81F35756AA729F3B88CFEF595690EC',
-                recipientPublicAccount: account,
+            await service.createArt({
+                garushNetwork: network === Network.garush,
+                brokerPrivateAccount: brokerPrivateKey,
+                artistPrivateAccount: artistPrivateKey,
+                description: `Some NFT description for file ${file.name}`,
+                mosaicDuration: mosaicDuration,
                 content: file.content,
                 name: file.name,
                 mime: file.mime,
@@ -68,7 +68,6 @@ export default function FileUploader({ account, refresh }: { account: string; re
             });
             setUploadError(undefined);
             setFile(undefined);
-            refresh();
         } catch (e) {
             console.error(e);
             setUploadError(`${e}`);
@@ -83,25 +82,25 @@ export default function FileUploader({ account, refresh }: { account: string; re
     };
 
     return (
-        <div>
-            <h3>File Upload!</h3>
+        <Stack gap={2}>
+            <h4>File Uploader</h4>
+            <Form>
+                <Form.Group className="mb-3">
+                    <Form.Control type="file" disabled={uploading} onChange={onFileChange} />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                    <Button variant="primary" disabled={!file || uploading} onClick={onFileUpload}>
+                        {uploading && !uploadError ? <Loading label="Uploading..." /> : 'Upload'}
+                    </Button>{' '}
+                    <Button variant="secondary" disabled={!file || uploading} onClick={onFileCancel}>
+                        Cancel
+                    </Button>{' '}
+                </Form.Group>
+            </Form>
             <div>
-                <input type="file" disabled={uploading} onChange={onFileChange} />
-                <button disabled={!file || uploading} onClick={onFileUpload}>
-                    Upload!
-                </button>
-                <button disabled={!file || uploading} onClick={onFileCancel}>
-                    Cancel!
-                </button>
-                <div>
-                    {file ? <div>{`File to upload ${file.name} size ${file.contentSize}`}</div> : <span />}
-                    {uploading ? <div>{`Uploading....`}</div> : <span />}
-                    {uploadError ? <div>{`Upload Error! ${uploadError}`}</div> : <span />}
-                    <div>
-                        <pre>{logs}</pre>
-                    </div>
-                </div>
+                {file ? <div>{`File to upload ${file.name} size ${file.contentSize}`}</div> : <span />}
+                {uploadError ? <AlertPopup message={`Upload Error! ${uploadError}`} /> : <span />}
             </div>
-        </div>
+        </Stack>
     );
 }
