@@ -16,8 +16,8 @@
 
 import Link from 'next/link';
 import { Container, Form, FormControl, InputGroup, Nav, Navbar } from 'react-bootstrap';
-import { useAction, useGetter } from 'vuex-but-for-react';
-import { User, UserActionTypes } from '../../../../store/UserStore';
+import { useAppDispatch } from '../../../../store/hooks';
+import { fetchUserAsync, logout, selectUserState } from '../../../../store/user/userSlice';
 import Logo from './Logo/Logo';
 import styles from './NavBar.module.scss';
 import NavUserProfileLogin from './NavUserProfileLogin/NavUserProfileLogin';
@@ -25,9 +25,10 @@ import NavUserProfileLogin from './NavUserProfileLogin/NavUserProfileLogin';
 export interface NavBarProps {}
 
 export default function NavBar(props: NavBarProps): JSX.Element {
-    const user = useGetter<User>('user');
-    const userLogin = useAction(UserActionTypes.USER_LOGIN);
-    const userLogout = useAction(UserActionTypes.USER_LOGOUT);
+    const dispatch = useAppDispatch();
+    const userState = selectUserState();
+    const userLogin = () => dispatch(fetchUserAsync('baha@symbol.dev'));
+    const userLogout = () => dispatch(logout());
     return (
         <Navbar bg="dark" variant="dark" expand="lg">
             <Container fluid>
@@ -57,7 +58,7 @@ export default function NavBar(props: NavBarProps): JSX.Element {
                             <FormControl type="search" placeholder="Search" className="me-2" aria-label="Search" />
                         </InputGroup>
                     </Form>
-                    <NavUserProfileLogin login={userLogin} logout={userLogout} user={user} />
+                    <NavUserProfileLogin login={userLogin} logout={userLogout} userState={userState} />
                 </Navbar.Collapse>
             </Container>
         </Navbar>

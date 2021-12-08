@@ -3,15 +3,15 @@ import type { AppProps } from 'next/app';
 import Layout from '../components/layout/Layout';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import UserStore from '../store/UserStore';
-import { withStore } from 'vuex-but-for-react';
+import store from '../store/store';
+import { Provider } from 'react-redux';
 
-function MyApp({ Component, pageProps }: AppProps) {
+export default function MyApp({ Component, pageProps }: AppProps) {
     return (
-        <Layout>
-            <Component {...pageProps} />
-        </Layout>
+        <Provider store={store}>
+            <Layout>
+                <Component {...pageProps} />
+            </Layout>
+        </Provider>
     );
 }
-
-export default withStore(MyApp, UserStore);
