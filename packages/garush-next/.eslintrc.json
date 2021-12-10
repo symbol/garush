@@ -1,9 +1,9 @@
 {
   "extends": ["next", "next/core-web-vitals", "prettier"],
-  "plugins": ["prettier", "license-header"],
+  "plugins": ["prettier", "header"],
   "rules": {
     "prefer-const": "error",
     "prettier/prettier": ["error"],
-    "license-header/header": [ "error", "./license-header.js" ]
+    "header/header": [2, "./license-header.js"]
   }
 }
