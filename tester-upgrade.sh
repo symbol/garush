@@ -4,7 +4,7 @@ set -e
 cd packages/storage
 npm run build
 cd ../..
-cd packages/site
+cd packages/tester
 npm run build
-aws s3 sync build  s3://site.garush.dev --acl public-read
+aws s3 sync build  s3://tester.garush.dev --acl public-read
 cd ../..
