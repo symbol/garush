@@ -1,5 +1,5 @@
 {
-  "name": "garush-next",
+  "name": "frontend",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "next lint -d src/",
     "lint:fix": "next lint -d src/ --fix",
-    "prepare": "cd ../.. && husky install && cd ./packages/garush-next"
+    "prepare": "cd ../.. && husky install && cd ./packages/frontend"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.6.2",
@@ -35,7 +35,7 @@
     "typescript": "^4.4.4"
   },
   "lint-staged": {
-    "*.{ts,tsx,css,md}": [
+    "*.{ts,tsx,js,jsx}": [
       "eslint --fix"
     ]
   }

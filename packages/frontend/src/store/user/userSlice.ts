@@ -15,10 +15,10 @@
  */
 
 import { AsyncThunk, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { useAppSelector } from '../hooks';
+import { useAppSelector } from '@store/hooks';
 
-import type { AppState } from '../store';
-import { fetchUserByEmail } from '../../services/userService';
+import type { AppState } from '@store/store';
+import { fetchUserByEmail } from '@services/userService';
 
 export interface User {
     id: string;

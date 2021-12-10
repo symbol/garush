@@ -16,8 +16,8 @@
 
 import { Fragment } from 'react';
 import { NavDropdown } from 'react-bootstrap';
-import { LoadingStatus, UserState } from '../../../../../store/user/userSlice';
-import LoadingButton from '../../../../basic/LoadingButton';
+import { LoadingStatus, UserState } from '@store/user/userSlice';
+import LoadingButton from '@components/basic/LoadingButton';
 
 interface NavUserProfileProps {
     userState?: UserState;

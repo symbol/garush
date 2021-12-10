@@ -13,17 +13,6 @@
  * See the License for the specific language governing permissions and limitations under the License.
  *
  */
-
-import { User } from '../store/user/userSlice';
-
-export async function fetchUserByEmail(email: string): Promise<User> {
-    const response = await fetch(`/api/user/${email}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
-    const result = await response.json();
-
-    return result;
-}
+module.exports = {
+    reactStrictMode: true,
+};
