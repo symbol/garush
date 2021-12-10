@@ -1,4 +1,20 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+/*
+ * (C) Symbol Contributors 2021
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and limitations under the License.
+ *
+ */
+
+import { AsyncThunk, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { useAppSelector } from '../hooks';
 
 import type { AppState, AppThunk } from '../store';
@@ -33,7 +49,7 @@ const initialState: UserState = {
 // will call the thunk with the `dispatch` function as the first argument. Async
 // code can then be executed and other actions can be dispatched. Thunks are
 // typically used to make async requests.
-export const fetchUserAsync = createAsyncThunk('user/fetchUserByEmail', async (email: string) => {
+export const fetchUserAsync: AsyncThunk<User, string, {}> = createAsyncThunk('user/fetchUserByEmail', async (email: string) => {
     const response = await fetchUserByEmail(email);
     // The value we return becomes the `fulfilled` action payload
     return response;
@@ -44,20 +60,10 @@ export const userSlice = createSlice({
     initialState,
     // The `reducers` field lets us define reducers and generate associated actions
     reducers: {
-        // login: (state) => {
-        //   // Redux Toolkit allows us to write "mutating" logic in reducers. It
-        //   // doesn't actually mutate the state because it uses the Immer library,
-        //   // which detects changes to a "draft state" and produces a brand new
-        //   // immutable state based off those changes
-        //   state.value += 1
-        // },
-        // decrement: (state) => {
-        //   state.value -= 1
-        // },
-        // // Use the PayloadAction type to declare the contents of `action.payload`
-        // incrementByAmount: (state, action: PayloadAction<number>) => {
-        //   state.value += action.payload
-        // },
+        // Redux Toolkit allows us to write "mutating" logic in reducers. It
+        // doesn't actually mutate the state because it uses the Immer library,
+        // which detects changes to a "draft state" and produces a brand new
+        // immutable state based off those changes
         logout: (state) => {
             state.user = undefined;
         },
@@ -73,10 +79,10 @@ export const userSlice = createSlice({
                 state.status = LoadingStatus.idle;
                 state.user = action.payload;
             })
-            .addCase(fetchUserAsync.rejected, (state, ) => {
-              state.status = LoadingStatus.failed;
-              state.user = undefined;
-          });
+            .addCase(fetchUserAsync.rejected, (state) => {
+                state.status = LoadingStatus.failed;
+                state.user = undefined;
+            });
     },
 });
 
@@ -85,19 +91,7 @@ export const { logout } = userSlice.actions;
 // The function below is called a selector and allows us to select a value from
 // the state. Selectors can also be defined inline where they're used instead of
 // in the slice file. For example: `useSelector((state: RootState) => state.counter.value)`
-
-// eslint-disable-next-line react-hooks/rules-of-hooks
-export const selectUserState = () => useAppSelector((state: AppState) => state.user);
-
-// We can also write thunks by hand, which may contain both sync and async logic.
-// Here's an example of conditionally dispatching actions based on current state.
-// export const incrementIfOdd =
-//   (amount: number): AppThunk =>
-//   (dispatch, getState) => {
-//     const currentValue = selectCount(getState())
-//     if (currentValue % 2 === 1) {
-//       dispatch(incrementByAmount(amount))
-//     }
-//   }
+// all custom selector hooks should start with useGetter
+export const useGetterUser = () => useAppSelector((state: AppState) => state.user);
 
 export default userSlice.reducer;
