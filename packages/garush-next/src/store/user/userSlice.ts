@@ -17,7 +17,7 @@
 import { AsyncThunk, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { useAppSelector } from '../hooks';
 
-import type { AppState, AppThunk } from '../store';
+import type { AppState } from '../store';
 import { fetchUserByEmail } from '../../services/userService';
 
 export interface User {
