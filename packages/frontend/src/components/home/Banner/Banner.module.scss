@@ -1,0 +1,23 @@
+.banner {
+    background: linear-gradient(180deg, rgba(44, 60, 77, 0.3) 0%, rgba(179, 42, 249, 0.3) 100%);
+    background-blend-mode: multiply;
+    font-family: 'Chainprinter';
+    display: flex;
+    flex-direction: column;
+    height: 15rem;
+    justify-content: center;
+    width: 100%;
+
+    .bannerText {
+        color: #fff;
+        font-size: 2rem;
+        font-weight: bold;
+        line-height: 1.5;
+        text-align: center;
+    }
+    .bannerButtons {
+        line-height: 1.5;
+        text-align: center;
+        text-decoration: none;
+    }
+}
