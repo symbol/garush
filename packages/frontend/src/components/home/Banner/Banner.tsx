@@ -15,16 +15,27 @@
  */
 import { Button } from 'react-bootstrap';
 import styles from './Banner.module.scss';
-
+import Link from 'next/link';
+import { Container, Row, Col } from 'react-bootstrap';
 export interface BannerProps {}
 export default function Banner(props: BannerProps) {
     return (
-        <div className={styles.banner}>
-            <div className={styles.bannerText}>WELCOME TO THE GARUSH NFT FACTORY AND MARKETPLACE</div>
-            <div className={styles.bannerButtons}>
-                <Button>EXPLORE</Button>
-                <Button>CREATE</Button>
-            </div>
-        </div>
+        <Container className={styles.banner}>
+            <Row className={styles.bannerText}>
+                <Col sm className="mx-auto" style={{ maxWidth: '50rem' }}>
+                    <h1>WELCOME TO THE GARUSH NFT FACTORY AND MARKETPLACE</h1>
+                </Col>
+            </Row>
+            <Row>
+                <Col className={styles.bannerButtons}>
+                    <Link href="/marketplace" passHref>
+                        <Button size="lg">EXPLORE</Button>
+                    </Link>
+                    <Link href="/create" passHref>
+                        <Button size="lg">CREATE</Button>
+                    </Link>
+                </Col>
+            </Row>
+        </Container>
     );
 }

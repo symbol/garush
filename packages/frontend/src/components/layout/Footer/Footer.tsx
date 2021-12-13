@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and limitations under the License.
  *
  */
-
+import { Container } from 'react-bootstrap';
+import styles from './Footer.module.scss';
 export default function Footer(): JSX.Element {
-    return <div>Footer</div>;
+    return (
+        <footer className={styles.footer}>
+            <Container>Footer</Container>
+        </footer>
+    );
 }

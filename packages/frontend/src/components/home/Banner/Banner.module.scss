@@ -1,5 +1,6 @@
 .banner {
     background: linear-gradient(180deg, rgba(44, 60, 77, 0.3) 0%, rgba(179, 42, 249, 0.3) 100%);
+    background-position: right 3rem top;
     background-blend-mode: multiply;
     font-family: 'Chainprinter';
     display: flex;
@@ -10,7 +11,6 @@
 
     .bannerText {
         color: #fff;
-        font-size: 2rem;
         font-weight: bold;
         line-height: 1.5;
         text-align: center;
@@ -19,5 +19,15 @@
         line-height: 1.5;
         text-align: center;
         text-decoration: none;
+
+        a:first-of-type {
+            margin-right: 2rem;
+        }
+    }
+    .buttonExplore {
+        background: url(../../../assets/images/button-bg-brown.svg) no-repeat;
+        background-size: 7.8rem auto;
+        border: none;
+        font-weight: bolder;
     }
 }
