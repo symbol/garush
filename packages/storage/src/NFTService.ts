@@ -19,7 +19,8 @@ import {
     TransferTransaction,
     UInt64,
 } from 'symbol-sdk';
-import { ConsoleLogger, PrivateAccountParam, StorageService, StoreFileParams, StoreFileResponse } from './StorageService';
+import { ConsoleLogger, Logger } from './logger';
+import { PrivateAccountParam, StorageService, StoreFileParams, StoreFileResponse } from './StorageService';
 
 export interface NemberArtMosaicData {
     v: number;
@@ -49,7 +50,7 @@ interface CreateArtParam {
     feeMultiplier: number;
     mosaicDuration?: number;
     userData?: Record<string, unknown>;
-    logger?: ConsoleLogger;
+    logger?: Logger;
     nonce?: MosaicNonce;
     extraTransactions?: Transaction[];
     cosignerAccounts?: PrivateAccountParam[];
@@ -64,7 +65,7 @@ interface BuyArtParam {
     buyerPrivateAccount: PrivateAccountParam;
     feeMultiplier: number;
     price: UInt64;
-    logger?: ConsoleLogger;
+    logger?: Logger;
 }
 
 interface ResellArtParam {
@@ -76,7 +77,7 @@ interface ResellArtParam {
     buyerPrivateAccount: PrivateAccountParam;
     feeMultiplier: number;
     price: UInt64;
-    logger?: ConsoleLogger;
+    logger?: Logger;
 }
 
 export class NFTService {

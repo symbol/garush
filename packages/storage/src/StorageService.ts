@@ -23,6 +23,7 @@ import {
     TransferTransaction,
 } from 'symbol-sdk';
 import { HeaderType } from './HeaderType';
+import { ConsoleLogger, Logger } from './logger';
 import { FileParser, FileParserManager, SplitResult } from './parser';
 import { Utils } from './Utils';
 import { YamlUtils } from './YamlUtils';
@@ -39,16 +40,6 @@ export interface FileMetadata {
     userData?: Record<string, HeaderType>;
 }
 
-export interface Logger {
-    log(message: string): void;
-}
-
-export class ConsoleLogger implements Logger {
-    log(message: string): void {
-        console.log(message);
-    }
-}
-
 export type PublicAddressParam = string | PublicAccount | Address;
 export type PublicAccountParam = string | PublicAccount;
 export type PrivateAccountParam = string | Account;
@@ -62,14 +53,14 @@ export interface StoreFileParams {
     mime: string;
     userData?: Record<string, HeaderType>;
     feeMultiplier: number;
-    logger?: ConsoleLogger;
+    logger?: Logger;
     extraTransactions?: Transaction[];
 }
 
 export interface StoreFileResponse {
     metadata: FileMetadata;
     rootTransactionHash: string;
-    logger?: ConsoleLogger;
+    logger?: Logger;
 }
 
 export class StorageService {
@@ -338,13 +329,17 @@ export class StorageService {
         } else {
             const aggregateTransactionRoot = transactionRoot as AggregateTransaction;
             try {
-                const innerTransactions = aggregateTransactionRoot.innerTransactions as TransferTransaction[];
-                const metadata = YamlUtils.fromYaml(innerTransactions[0].message.payload) as FileMetadata;
+                const innerTransactions = aggregateTransactionRoot.innerTransactions;
+                const metadataTransferTransaction = innerTransactions[0] as TransferTransaction;
+                if (!metadataTransferTransaction.message) {
+                    return undefined;
+                }
+                const metadata = YamlUtils.fromYaml(metadataTransferTransaction.message.payload) as FileMetadata;
                 if (!metadata || metadata.type != 'garush') {
                     return undefined;
                 }
                 const hashes = _.takeWhile(innerTransactions.slice(1), (t) => t.type === TransactionType.TRANSFER)
-                    .map((t) => t.message.toDTO())
+                    .map((t) => (t as TransferTransaction).message.toDTO())
                     .join('');
                 metadata.hashes = hashes.match(/.{1,64}/g) as string[];
                 return metadata;

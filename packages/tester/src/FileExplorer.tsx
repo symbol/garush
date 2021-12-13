@@ -47,7 +47,7 @@ export default function FileExplorer() {
                     </a>
                     {hashes.map((dataHash, dataIndex) => {
                         return (
-                            <div key={dataIndex}>
+                            <div key={dataHash}>
                                 Data Transaction {dataIndex + 1}: <a href={`${explorerUrl}/transactions/${dataHash}`}>{dataHash}</a>
                             </div>
                         );

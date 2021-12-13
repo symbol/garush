@@ -20,12 +20,12 @@ export default function FileList({
     }
     return (
         <Stack gap={3} direction="horizontal">
-            {files.map((file, fileIndex) => {
+            {files.map((file) => {
                 const hash = file.rootTransaction.transactionInfo?.hash;
                 if (!hash) {
                     throw new Error('Root hash must exist!');
                 }
-                return <FileCard key={fileIndex} file={file} network={network} />;
+                return <FileCard key={hash} file={file} network={network} />;
             })}
         </Stack>
     );

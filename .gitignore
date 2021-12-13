@@ -8,3 +8,4 @@
 **/ts-docs/
 *.iml
 
+/docker-data
