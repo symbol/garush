@@ -16,8 +16,8 @@
 import type { GetServerSideProps, GetServerSidePropsContext } from 'next';
 import Head from 'next/head';
 import { Container } from 'react-bootstrap';
-import Banner from '@components/home/Banner/Banner';
-import Middle from '@components/home/Middle/Middle';
+import Banner from './home/Banner/Banner';
+import Middle from './home/Middle/Middle';
 import styles from './index.module.scss';
 import { fetchCollections } from '@services/collectionService';
 import { useEffect } from 'react';
