@@ -19,6 +19,7 @@ import { useAppSelector } from '@store/hooks';
 
 import type { AppState } from '@store/store';
 import { fetchUserByEmail } from '@services/userService';
+import { LoadingState, LoadingStatus } from '@store/baseSlice';
 
 export interface User {
     id: string;
@@ -29,19 +30,13 @@ export interface User {
     isActive?: boolean;
     loggedIn?: boolean;
 }
-export enum LoadingStatus {
-    idle = 'idle',
-    loading = 'loading',
-    failed = 'failed',
-}
-export interface UserState {
+export interface UserState extends LoadingState {
     user?: User;
-    status: LoadingStatus;
 }
 
 const initialState: UserState = {
     user: undefined,
-    status: LoadingStatus.idle,
+    loadingStatus: LoadingStatus.idle,
 };
 
 // The function below is called a thunk and allows us to perform async logic. It
@@ -73,14 +68,14 @@ export const userSlice = createSlice({
     extraReducers: (builder) => {
         builder
             .addCase(fetchUserAsync.pending, (state) => {
-                state.status = LoadingStatus.loading;
+                state.loadingStatus = LoadingStatus.loading;
             })
             .addCase(fetchUserAsync.fulfilled, (state, action) => {
-                state.status = LoadingStatus.idle;
+                state.loadingStatus = LoadingStatus.idle;
                 state.user = action.payload;
             })
             .addCase(fetchUserAsync.rejected, (state) => {
-                state.status = LoadingStatus.failed;
+                state.loadingStatus = LoadingStatus.failed;
                 state.user = undefined;
             });
     },

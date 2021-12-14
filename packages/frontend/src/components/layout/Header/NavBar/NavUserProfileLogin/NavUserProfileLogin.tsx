@@ -16,8 +16,9 @@
 
 import { Fragment } from 'react';
 import { NavDropdown } from 'react-bootstrap';
-import { LoadingStatus, UserState } from '@store/user/userSlice';
+import { UserState } from '@store/user/userSlice';
 import LoadingButton from '@components/basic/LoadingButton';
+import { LoadingStatus } from '@store/baseSlice';
 
 interface NavUserProfileProps {
     userState?: UserState;
@@ -42,7 +43,7 @@ export default function NavUserProfileLogin(props: NavUserProfileProps) {
                     variant="primary"
                     onClick={() => props.login()}
                     text="Login"
-                    loading={props.userState?.status === LoadingStatus.loading}
+                    loading={props.userState?.loadingStatus === LoadingStatus.loading}
                 />
             )}
         </Fragment>

@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and limitations under the License.
  *
  */
-
-import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
-import userReducer from './user/userSlice';
-import collectionReducer from './collectionSlice';
-
-export function makeStore() {
-    return configureStore({
-        reducer: { user: userReducer, collection: collectionReducer },
-    });
+export enum LoadingStatus {
+    idle = 'idle',
+    loading = 'loading',
+    failed = 'failed',
 }
 
-const store = makeStore();
-
-export type AppState = ReturnType<typeof store.getState>;
-
-export type AppDispatch = typeof store.dispatch;
-
-export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, AppState, unknown, Action<string>>;
-
-export default store;
+export interface LoadingState {
+    loadingStatus: LoadingStatus;
+}

@@ -13,13 +13,27 @@
  * See the License for the specific language governing permissions and limitations under the License.
  *
  */
-import type { NextPage } from 'next';
+import type { GetServerSideProps, GetServerSidePropsContext } from 'next';
 import Head from 'next/head';
 import { Container } from 'react-bootstrap';
 import Banner from '@components/home/Banner/Banner';
 import Middle from '@components/home/Middle/Middle';
 import styles from './index.module.scss';
-const Home: NextPage = () => {
+import { fetchCollections } from '@services/collectionService';
+import { useEffect } from 'react';
+import { Collection, setCollections } from '@store/collectionSlice';
+import { useAppDispatch } from '@store/hooks';
+
+interface HomePageProps {
+    collections: Collection[];
+}
+const Home = (props: HomePageProps): JSX.Element => {
+    const dispatch = useAppDispatch();
+    useEffect(() => {
+        if (props.collections?.length) {
+            dispatch(setCollections(props.collections));
+        }
+    }, [dispatch, props.collections]);
     return (
         <Container fluid>
             <Head>
@@ -35,6 +49,14 @@ const Home: NextPage = () => {
             </section>
         </Container>
     );
+};
+export const getServerSideProps: GetServerSideProps = async (context: GetServerSidePropsContext<any>) => {
+    const collections = await fetchCollections();
+    return {
+        props: {
+            collections,
+        },
+    };
 };
 
 export default Home;

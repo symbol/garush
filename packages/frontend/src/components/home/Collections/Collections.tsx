@@ -16,19 +16,14 @@
 import { Col, Container, Row } from 'react-bootstrap';
 import styles from './Collections.module.scss';
 import Image from 'next/image';
+import { useGetterCollections } from '@store/collectionSlice';
 
 export interface CollectionsProps {}
 export default function Collections(props: CollectionsProps) {
-    const collection = {
-        title: 'Coll ',
-        floorPrice: '$100',
-        listingPrice: '$200',
-        likes: '100',
-        image: 'https://picsum.photos/180',
-    };
-    const collections = Array(6)
-        .fill(collection)
-        .map((c, inx) => ({ ...c, title: c.title + (inx + 1) }));
+    const collections = useGetterCollections();
+    if (!collections?.length) {
+        return <div>No collections</div>;
+    }
     return (
         <Container>
             <Row xs={1} md={2} className={'g-4 ' + styles.row}>
@@ -37,10 +32,10 @@ export default function Collections(props: CollectionsProps) {
                         {
                             <div className="card flex-row flex-wrap">
                                 <div className="card-header border-0">
-                                    <Image src={c.image + `?order=${inx}`} alt="" width="180" height="180" />
+                                    <Image src={c.imageUrl + `?order=${inx}`} alt="" width="180" height="180" />
                                 </div>
                                 <div className={styles.cardBlock + ' card-block px-2'}>
-                                    <h4 className="card-title">{c.title}</h4>
+                                    <h4 className="card-title">{c.name}</h4>
                                     <p className="card-text">Floor price: {c.floorPrice}</p>
                                     <a href="#" className="btn btn-secondary">
                                         Details

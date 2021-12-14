@@ -19,13 +19,16 @@ import Layout from '@components/layout/Layout';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import store from '@store/store';
 import { Provider } from 'react-redux';
+import { SSRProvider } from 'react-bootstrap';
 
 export default function MyApp({ Component, pageProps }: AppProps) {
     return (
-        <Provider store={store}>
-            <Layout>
-                <Component {...pageProps} />
-            </Layout>
-        </Provider>
+        <SSRProvider>
+            <Provider store={store}>
+                <Layout>
+                    <Component {...pageProps} />
+                </Layout>
+            </Provider>
+        </SSRProvider>
     );
 }

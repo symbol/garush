@@ -17,7 +17,7 @@
 import { User } from '@store/user/userSlice';
 
 export async function fetchUserByEmail(email: string): Promise<User> {
-    const response = await fetch(`/api/user/${email}`, {
+    const response = await fetch(`/api/users/${email}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

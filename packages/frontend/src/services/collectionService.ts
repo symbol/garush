@@ -14,22 +14,16 @@
  *
  */
 
-import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
-import userReducer from './user/userSlice';
-import collectionReducer from './collectionSlice';
+import { Collection } from '@store/collectionSlice';
 
-export function makeStore() {
-    return configureStore({
-        reducer: { user: userReducer, collection: collectionReducer },
+export async function fetchCollections(): Promise<Collection[]> {
+    const response = await fetch(`http://localhost:3000/api/collections`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
     });
+    const result = await response.json();
+
+    return result;
 }
-
-const store = makeStore();
-
-export type AppState = ReturnType<typeof store.getState>;
-
-export type AppDispatch = typeof store.dispatch;
-
-export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, AppState, unknown, Action<string>>;
-
-export default store;
