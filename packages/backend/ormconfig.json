@@ -1,0 +1,15 @@
+{
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5432,
+    "database": "garush",
+    "username": "admin",
+    "password": "admin",
+    "synchronize": false,
+    "entities": ["src/**/*Entity{.ts,.js}"],
+    "migrationsTableName": "migration",
+    "migrations": ["src/database/migration/*.ts"],
+    "cli": {
+        "migrationsDir": "src/database/migration"
+    }
+}

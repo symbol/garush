@@ -37,12 +37,11 @@
     "dependencies": {
         "js-yaml": "^4.1.0",
         "lodash": "^4.17.21",
-        "rxjs": "^6.6.3",
-        "symbol-sdk": "^1.0.3-message-improvement-202111021446"
+        "rxjs": "^7.4.0",
+        "symbol-sdk": "^1.0.4-alpha-202112211435"
     },
     "devDependencies": {
         "@types/chai": "^4.2.12",
-        "@types/inquirer": "^7.3.1",
         "@types/js-yaml": "^4.0.3",
         "@types/lodash": "^4.14.176",
         "@types/memorystream": "^0.3.0",

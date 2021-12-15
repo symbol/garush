@@ -1,4 +1,5 @@
 import { FileMetadata, Utils, YamlUtils } from 'garush-storage';
+import _ from 'lodash';
 import React, { useContext, useState } from 'react';
 import { Stack } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
@@ -34,7 +35,7 @@ export default function FileExplorer() {
         <Site>
             <Stack gap={3} direction="vertical">
                 <FilePanel metadata={file} network={network} />
-                <pre>{YamlUtils.toYaml(metadata)}</pre>
+                <pre>{YamlUtils.toYaml(_.omit(metadata, 'rootTransaction'))}</pre>
                 <div>
                     Root Transaction:{' '}
                     <a

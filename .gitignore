@@ -9,3 +9,5 @@
 *.iml
 
 /docker-data
+/packages/*/dist/
+/packages/*/logs/

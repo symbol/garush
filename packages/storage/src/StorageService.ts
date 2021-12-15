@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { EMPTY, Observable, of } from 'rxjs';
+import { EMPTY, firstValueFrom, Observable, of } from 'rxjs';
 import { map, mergeMap, toArray } from 'rxjs/operators';
 import {
     Account,
@@ -40,6 +40,10 @@ export interface FileMetadata {
     userData?: Record<string, HeaderType>;
 }
 
+export interface FileMetadataWithTransaction extends FileMetadata {
+    rootTransaction: AggregateTransaction;
+}
+
 export type PublicAddressParam = string | PublicAccount | Address;
 export type PublicAccountParam = string | PublicAccount;
 export type PrivateAccountParam = string | Account;
@@ -60,7 +64,6 @@ export interface StoreFileParams {
 export interface StoreFileResponse {
     metadata: FileMetadata;
     rootTransactionHash: string;
-    logger?: Logger;
 }
 
 export class StorageService {
@@ -80,10 +83,10 @@ export class StorageService {
         extraTransactions = [],
         logger = new ConsoleLogger(),
     }: StoreFileParams): Promise<StoreFileResponse> {
-        const epochAdjustment = await this.repositoryFactory.getEpochAdjustment().toPromise();
+        const epochAdjustment = await firstValueFrom(this.repositoryFactory.getEpochAdjustment());
         const deadline = Deadline.create(epochAdjustment);
-        const generationHash = await this.repositoryFactory.getGenerationHash().toPromise();
-        const networkType = await this.repositoryFactory.getNetworkType().toPromise();
+        const generationHash = await firstValueFrom(this.repositoryFactory.getGenerationHash());
+        const networkType = await firstValueFrom(this.repositoryFactory.getNetworkType());
         logger?.log(`Splitting file size ${content.length}`);
         const fileMimeType = mime;
         const { parser, multiLevelChunks, header } = await this.split(content, mime, logger);
@@ -213,95 +216,86 @@ export class StorageService {
         return aggregate.setMaxFeeForAggregate(feeMultiplier, requiredCosignatures);
     }
 
-    public async loadImagesMetadata(
-        addressParam: PublicAddressParam,
-    ): Promise<{ metadata: FileMetadata; rootTransaction: TransferTransaction | AggregateTransaction }[]> {
-        const networkType = await this.repositoryFactory.getNetworkType().toPromise();
+    public async loadFilesMetadata(addressParam: PublicAddressParam): Promise<FileMetadataWithTransaction[]> {
+        const networkType = await firstValueFrom(this.repositoryFactory.getNetworkType());
         const address = StorageService.getAddress(addressParam, networkType);
         const transactionRepository = this.repositoryFactory.createTransactionRepository();
 
-        return transactionRepository
-            .streamer()
-            .search({
-                group: TransactionGroup.Confirmed,
-                type: [TransactionType.TRANSFER],
-                recipientAddress: address,
-                embedded: true,
-                order: Order.Desc,
-            })
-            .pipe(
-                mergeMap<Transaction, Observable<TransferTransaction | AggregateTransaction>>((t) => {
-                    return this.loadTransaction(t as TransferTransaction, transactionRepository);
-                }),
-                mergeMap((t) => {
-                    const rootTransaction = t as TransferTransaction | AggregateTransaction;
-                    const metadata = this.getMetadata(rootTransaction);
-                    if (!metadata) {
-                        return EMPTY;
-                    } else {
-                        return of({ metadata, rootTransaction });
-                    }
-                }),
-                toArray(),
-            )
-            .toPromise();
+        return firstValueFrom(
+            transactionRepository
+                .streamer()
+                .search({
+                    group: TransactionGroup.Confirmed,
+                    type: [TransactionType.TRANSFER],
+                    recipientAddress: address,
+                    embedded: true,
+                    order: Order.Desc,
+                })
+                .pipe(
+                    mergeMap<Transaction, Observable<AggregateTransaction>>((t) => {
+                        return this.loadRootTransaction(t as TransferTransaction, transactionRepository);
+                    }),
+                    mergeMap((t) => {
+                        const rootTransaction = t as AggregateTransaction;
+                        const metadata = this.getMetadata(rootTransaction);
+                        if (!metadata) {
+                            return EMPTY;
+                        } else {
+                            return of({ ...metadata, rootTransaction });
+                        }
+                    }),
+                    toArray(),
+                ),
+        );
     }
 
-    private loadTransaction(
-        t: TransferTransaction,
-        transactionRepository: TransactionRepository,
-    ): Observable<TransferTransaction | AggregateTransaction> {
-        if (t.type != TransactionType.TRANSFER) {
-            throw new Error('Invalid transaction type!');
-        }
-        const metadata = this.getMetadata(t);
-        if (!metadata) {
-            return of();
-        }
+    private loadRootTransaction(t: Transaction, transactionRepository: TransactionRepository): Observable<AggregateTransaction> {
         const aggregateHash = (t.transactionInfo as AggregateTransactionInfo)?.aggregateHash;
         if (aggregateHash) {
             return transactionRepository
                 .getTransaction(aggregateHash, TransactionGroup.Confirmed)
                 .pipe(map((t) => t as AggregateTransaction));
+        } else {
+            throw new Error('Cannot load parent transaction hash from transaction');
         }
-        return of(t);
     }
 
-    public async loadImageFromHash(
+    public async loadFileFromHash(
         transactionHash: string,
-    ): Promise<{ metadata: FileMetadata; content: Uint8Array; dataTransactionsTotalSize: number }> {
+    ): Promise<{ metadata: FileMetadataWithTransaction; content: Uint8Array; dataTransactionsTotalSize: number }> {
         const metadata = await this.loadMetadataFromHash(transactionHash);
-        return this.loadImageFromMetadata(metadata);
+        const file = await this.loadFileFromMetadata(metadata);
+        return { metadata, ...file };
     }
 
-    public async loadMetadataFromHash(transactionHash: string): Promise<FileMetadata> {
+    public async loadMetadataFromHash(transactionHash: string): Promise<FileMetadataWithTransaction> {
         const transactionRepository = this.repositoryFactory.createTransactionRepository();
-        const transactionRoot = (await transactionRepository.getTransaction(transactionHash, TransactionGroup.Confirmed).toPromise()) as
-            | TransferTransaction
-            | AggregateTransaction;
+        const rootTransaction = (await firstValueFrom(
+            transactionRepository.getTransaction(transactionHash, TransactionGroup.Confirmed),
+        )) as AggregateTransaction;
 
-        const metadata = this.getMetadata(transactionRoot);
+        const metadata = this.getMetadata(rootTransaction);
         if (!metadata) {
             throw new Error(`Transaction ${transactionHash} is not a root garush transaction!`);
         }
-        return metadata;
+        return { ...metadata, rootTransaction };
     }
 
-    public async loadImageFromMetadata(
+    public async loadFileFromMetadata<M extends FileMetadata>(
         metadata: FileMetadata,
-    ): Promise<{ metadata: FileMetadata; content: Uint8Array; dataTransactionsTotalSize: number }> {
+    ): Promise<{ content: Uint8Array; dataTransactionsTotalSize: number }> {
         const fileParser = this.fileParserManager.getFileParser(metadata.parser);
         const transactionRepository = this.repositoryFactory.createTransactionRepository();
         const aggregateTransactions = (
             await Promise.all(
                 metadata.hashes.map((hash) => {
-                    return transactionRepository.getTransaction(hash, TransactionGroup.Confirmed).toPromise();
+                    return firstValueFrom(transactionRepository.getTransaction(hash, TransactionGroup.Confirmed));
                 }),
             )
         ).map((a) => a as AggregateTransaction);
         const dataTransactionsTotalSize = _.sumBy(aggregateTransactions, (a) => a.size);
         const content = await this.getContent(aggregateTransactions, fileParser);
-        return { metadata, content, dataTransactionsTotalSize };
+        return { content, dataTransactionsTotalSize };
     }
 
     private getContent(aggregateTransactions: AggregateTransaction[], fileParser: FileParser): Promise<Uint8Array> {
@@ -313,21 +307,11 @@ export class StorageService {
         return fileParser.join(chunks);
     }
 
-    public getMetadata(transactionRoot: TransferTransaction | AggregateTransaction): FileMetadata | undefined {
-        if (transactionRoot.type == TransactionType.TRANSFER) {
-            const transferTransactionRoot = transactionRoot as TransferTransaction;
-            try {
-                const metadata = YamlUtils.fromYaml(transferTransactionRoot.message.payload) as FileMetadata;
-                if (!metadata || metadata.type != 'garush') {
-                    return undefined;
-                }
-                return metadata;
-            } catch (e) {
-                console.error('Cannot load metadata!', e);
-                return undefined;
-            }
+    public getMetadata(rootTransaction: Transaction): FileMetadata | undefined {
+        if (rootTransaction.type != TransactionType.AGGREGATE_BONDED && rootTransaction.type != TransactionType.AGGREGATE_COMPLETE) {
+            throw new Error(`Root transaction must be an aggregate bonded or complete but got ${rootTransaction.type}!`);
         } else {
-            const aggregateTransactionRoot = transactionRoot as AggregateTransaction;
+            const aggregateTransactionRoot = rootTransaction as AggregateTransaction;
             try {
                 const innerTransactions = aggregateTransactionRoot.innerTransactions;
                 const metadataTransferTransaction = innerTransactions[0] as TransferTransaction;
@@ -364,7 +348,7 @@ export class StorageService {
                         logger.log(`There has been an error ${JSON.stringify(t, null, 2)}`);
                     });
                 logger.log(`Announcing transaction ${signedTransaction.hash}`);
-                await transactionService.announce(signedTransaction, listener).toPromise();
+                await firstValueFrom(transactionService.announce(signedTransaction, listener));
                 logger.log(`Transaction ${signedTransaction.hash} confirmed`);
             } catch (e) {
                 console.error(e);

@@ -1,17 +1,10 @@
-import { FileMetadata } from 'garush-storage';
+import { FileMetadataWithTransaction } from 'garush-storage';
 import { Stack } from 'react-bootstrap';
-import { Transaction } from 'symbol-sdk';
 import { Network } from './App';
 import FileCard from './FileCard';
 import Loading from './Loading';
 
-export default function FileList({
-    files,
-    network,
-}: {
-    files?: { metadata: FileMetadata; rootTransaction: Transaction }[];
-    network: Network;
-}) {
+export default function FileList({ files, network }: { files?: FileMetadataWithTransaction[]; network: Network }) {
     if (files === undefined) {
         return <Loading />;
     }

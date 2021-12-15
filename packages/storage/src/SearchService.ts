@@ -10,17 +10,24 @@ import {
     RepositoryFactory,
     TransactionGroup,
     TransactionType,
-    UInt64,
+    TransferTransaction,
 } from 'symbol-sdk';
 import { FileMetadata, StorageService } from './StorageService';
+import { Utils } from './Utils';
 
 export interface Art {
-    creationHeight: UInt64;
+    creationHeight: bigint;
     mosaicId: MosaicId;
     rootTransactionHash: string;
     metadata: FileMetadata;
     rootTransaction: AggregateTransaction;
+    artist: Address;
     owner: Address;
+}
+
+export interface SearchCriteria {
+    fromHeight?: bigint;
+    toHeight?: bigint;
 }
 
 export class SearchService {
@@ -29,15 +36,14 @@ export class SearchService {
         this.storageService = new StorageService(repositoryFactory);
     }
 
-    public search({ fromHeight }: { fromHeight?: UInt64 }): Observable<Art> {
+    public search({ fromHeight, toHeight }: SearchCriteria): Observable<Art> {
         const transactionRepository = this.repositoryFactory.createTransactionRepository();
-
-        console.log('HERE!');
         return transactionRepository
             .streamer()
             .search({
                 group: TransactionGroup.Confirmed,
-                fromHeight: fromHeight,
+                fromHeight: Utils.fromOptionalBigInt(fromHeight),
+                toHeight: Utils.fromOptionalBigInt(toHeight),
                 type: [TransactionType.MOSAIC_DEFINITION],
                 embedded: true,
             })
@@ -68,10 +74,12 @@ export class SearchService {
                             if (!metadata) {
                                 return EMPTY;
                             }
+                            const artist = (aggregateTransaction.innerTransactions[0] as TransferTransaction).signer!.address;
                             return this.getOwner(mosaicId).pipe(
                                 map((a) => {
                                     return {
-                                        creationHeight: creationHeight,
+                                        creationHeight: Utils.toBigInt(creationHeight),
+                                        artist: artist,
                                         owner: a.address,
                                         metadata: metadata,
                                         mosaicId: mosaicId,

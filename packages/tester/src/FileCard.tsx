@@ -1,13 +1,13 @@
-import { FileMetadata } from 'garush-storage';
+import { FileMetadataWithTransaction } from 'garush-storage';
 import React, { useContext, useEffect, useState } from 'react';
 import { Card } from 'react-bootstrap';
-import { Account, AggregateTransaction, Mosaic, Transaction, TransactionType, TransferTransaction } from 'symbol-sdk';
+import { Account, AggregateTransaction, Mosaic, TransactionType, TransferTransaction } from 'symbol-sdk';
 import { ConfigurationContext, Network } from './App';
 import BuyButton from './BuyButton';
 import FilePanel from './FilePanel';
 import ResellButton from './ResellButton';
 
-export default function FileCard({ file, network }: { file: { metadata: FileMetadata; rootTransaction: Transaction }; network: Network }) {
+export default function FileCard({ file, network }: { file: FileMetadataWithTransaction; network: Network }) {
     const hash = file.rootTransaction.transactionInfo?.hash;
     const { repositoryFactory, brokerPrivateKey, networkType } = useContext(ConfigurationContext)[Network.symbol];
     const brokerAccount = Account.createFromPrivateKey(brokerPrivateKey, networkType);
@@ -50,15 +50,15 @@ export default function FileCard({ file, network }: { file: { metadata: FileMeta
     }, [repositoryFactory, file, brokerAccount]);
 
     const { explorerUrl } = useContext(ConfigurationContext)[network];
-    const mosaicId = file.metadata.userData?.mosaicId;
+    const mosaicId = file.userData?.mosaicId;
     return (
         <Card style={{ width: '24rem' }}>
-            <Card.Header>{file.metadata.name}</Card.Header>
+            <Card.Header>{file.name}</Card.Header>
             <Card.Body>
-                <FilePanel metadata={file.metadata} network={network} />
+                <FilePanel metadata={file} network={network} />
             </Card.Body>
             <Card.Body>
-                <a target="_blank" href={`explorer/${network}/${hash}`} rel="noreferrer">
+                <a target="_blank" href={`/explorer/${network}/${hash}`} rel="noreferrer">
                     Explore File
                 </a>
             </Card.Body>

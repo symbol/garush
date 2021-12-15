@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as https from 'https';
+import { firstValueFrom } from 'rxjs';
 import { toArray } from 'rxjs/operators';
 import {
     AggregateTransaction,
@@ -95,22 +96,23 @@ export class NFTService {
     //4EF18BE1687BB030
     public async takeNemberArt(mosaicId: MosaicId): Promise<{ matadata: NemberArtMosaicMetadata; mosaic: MosaicInfo }> {
         const mosaicRepository = this.symbolRepositoryFactory.createMosaicRepository();
-        const mosaic = await mosaicRepository.getMosaic(mosaicId).toPromise();
+        const mosaic = await firstValueFrom(mosaicRepository.getMosaic(mosaicId));
         return { mosaic: mosaic, matadata: await this.getMetadata(mosaic) };
     }
 
     public async getMetadata(mosaic: MosaicInfo): Promise<NemberArtMosaicMetadata> {
         //TODO create composite id if the metadata if possible.
         const metadataRepository = this.symbolRepositoryFactory.createMetadataRepository();
-        const searchedMetadata = await metadataRepository
-            .streamer()
-            .search({
-                metadataType: MetadataType.Mosaic,
-                targetId: mosaic.id,
-                targetAddress: mosaic.ownerAddress,
-            })
-            .pipe(toArray())
-            .toPromise();
+        const searchedMetadata = await firstValueFrom(
+            metadataRepository
+                .streamer()
+                .search({
+                    metadataType: MetadataType.Mosaic,
+                    targetId: mosaic.id,
+                    targetAddress: mosaic.ownerAddress,
+                })
+                .pipe(toArray()),
+        );
 
         const finalMetadata = searchedMetadata
             .map((m) => {
@@ -157,9 +159,9 @@ export class NFTService {
     public async createArt(params: CreateArtParam): Promise<StoreFileResponse> {
         const logger = params.logger || new ConsoleLogger();
         const repositoryFactory = params.garushNetwork ? this.garushRepositoryFactory : this.symbolRepositoryFactory;
-        const epochAdjustment = await repositoryFactory.getEpochAdjustment().toPromise();
+        const epochAdjustment = await firstValueFrom(repositoryFactory.getEpochAdjustment());
         const deadline = Deadline.create(epochAdjustment);
-        const networkType = await repositoryFactory.getNetworkType().toPromise();
+        const networkType = await firstValueFrom(repositoryFactory.getNetworkType());
         const artistAccount = StorageService.getAccount(params.artistPrivateAccount, networkType);
         const brokerAccount = StorageService.getAccount(params.brokerPrivateAccount, networkType);
         const flags = MosaicFlags.create(false, true, false);
@@ -217,15 +219,15 @@ export class NFTService {
     public async sellArt(params: BuyArtParam): Promise<StoreFileResponse> {
         const logger = params.logger || new ConsoleLogger();
         const repositoryFactory = this.symbolRepositoryFactory;
-        const { currency } = await repositoryFactory.getCurrencies().toPromise();
-        const networkType = await repositoryFactory.getNetworkType().toPromise();
+        const { currency } = await firstValueFrom(repositoryFactory.getCurrencies());
+        const networkType = await firstValueFrom(repositoryFactory.getNetworkType());
         const nonce = MosaicNonce.createRandom();
         const artistAccount = StorageService.getAccount(params.artistPrivateAccount, networkType);
         const buyerAccount = StorageService.getAccount(params.buyerPrivateAccount, networkType);
         const brokerAccount = StorageService.getAccount(params.brokerPrivateAccount, networkType);
         const mosaicId = MosaicId.createFromNonce(nonce, brokerAccount.address);
-        const file = await new StorageService(this.garushRepositoryFactory).loadImageFromHash(params.rootTransactionHash);
-        const epochAdjustment = await repositoryFactory.getEpochAdjustment().toPromise();
+        const file = await new StorageService(this.garushRepositoryFactory).loadFileFromHash(params.rootTransactionHash);
+        const epochAdjustment = await firstValueFrom(repositoryFactory.getEpochAdjustment());
         const deadline = Deadline.create(epochAdjustment);
 
         logger.log(
@@ -300,14 +302,14 @@ export class NFTService {
     public async resellArt(params: ResellArtParam): Promise<void> {
         const logger = params.logger || new ConsoleLogger();
         const repositoryFactory = this.symbolRepositoryFactory;
-        const { currency } = await repositoryFactory.getCurrencies().toPromise();
-        const networkType = await repositoryFactory.getNetworkType().toPromise();
+        const { currency } = await firstValueFrom(repositoryFactory.getCurrencies());
+        const networkType = await firstValueFrom(repositoryFactory.getNetworkType());
         const ownerAccount = StorageService.getAccount(params.ownerPrivateAccount, networkType);
         const buyerAccount = StorageService.getAccount(params.buyerPrivateAccount, networkType);
         const brokerAccount = StorageService.getAccount(params.brokerPrivateAccount, networkType);
         const file = await new StorageService(repositoryFactory).loadMetadataFromHash(params.rootTransactionHash);
-        const epochAdjustment = await repositoryFactory.getEpochAdjustment().toPromise();
-        const generationHash = await repositoryFactory.getGenerationHash().toPromise();
+        const epochAdjustment = await firstValueFrom(repositoryFactory.getEpochAdjustment());
+        const generationHash = await firstValueFrom(repositoryFactory.getGenerationHash());
         const deadline = Deadline.create(epochAdjustment);
         if (!file.userData?.mosaicId) {
             throw new Error(`There is no mosaic id on file ${params.rootTransactionHash}`);

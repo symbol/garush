@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { UInt64 } from 'symbol-sdk';
 
 export class Utils {
     /**
@@ -47,4 +48,20 @@ export class Utils {
     public static join = (chunks: Uint8Array[][]): Promise<Uint8Array> => {
         return Promise.resolve(Utils.concat(..._.flatMap(chunks)));
     };
+
+    public static toOptionalBigInt(uint64: UInt64 | undefined): bigint | undefined {
+        return uint64 == undefined ? undefined : this.toBigInt(uint64);
+    }
+
+    public static fromOptionalBigInt(bigint: bigint | undefined): UInt64 | undefined {
+        return bigint == undefined ? undefined : this.fromBigInt(bigint);
+    }
+
+    public static toBigInt(uint64: UInt64): bigint {
+        return BigInt(uint64.toString());
+    }
+
+    public static fromBigInt(bigint: bigint): UInt64 {
+        return UInt64.fromNumericString(bigint.toString());
+    }
 }

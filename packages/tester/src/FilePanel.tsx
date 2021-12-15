@@ -15,7 +15,7 @@ export default function FilePanel({ metadata, network }: { metadata: FileMetadat
     const [error, setError] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-        storageService.loadImageFromMetadata(metadata).then(
+        storageService.loadFileFromMetadata(metadata).then(
             (r) => setContent(r),
             (e) => setError(Utils.getMessageFromError(e)),
         );
