@@ -31,7 +31,7 @@ export default function Collections(props: CollectionsProps) {
                     <Col id={'col_' + inx} key={'col_' + inx}>
                         {
                             <div className="card flex-row flex-wrap">
-                                <div className="card-header border-0">
+                                <div className={'card-header border-0 ' + styles.cardHeader}>
                                     <Image src={c.imageUrl + `?order=${inx}`} alt="" width="180" height="180" />
                                 </div>
                                 <div className={styles.cardBlock + ' card-block px-2'}>

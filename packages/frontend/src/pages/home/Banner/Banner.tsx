@@ -29,10 +29,10 @@ export default function Banner(props: BannerProps) {
             <Row>
                 <Col className={styles.bannerButtons}>
                     <Link href="/marketplace" passHref>
-                        <Button size="lg">EXPLORE</Button>
+                        <Button className={styles.buttonExplore}>EXPLORE</Button>
                     </Link>
                     <Link href="/create" passHref>
-                        <Button size="lg">CREATE</Button>
+                        <Button className={styles.buttonCreate}>CREATE</Button>
                     </Link>
                 </Col>
             </Row>
