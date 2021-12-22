@@ -51,30 +51,34 @@ export class FileService {
         return undefined;
     }
 
-    async refresh(network: Network, rootTransactionHash: string): Promise<FileEntity> {
-        const service = this.getStorage(network);
-        let metadata = await this.refreshS3File(network, rootTransactionHash);
-        if (!metadata) {
-            metadata = await service.loadMetadataFromHash(rootTransactionHash);
-        }
-        let file = await this.fileEntityModel.findOne({
-            where: { rootTransactionHash: rootTransactionHash },
-        });
-        if (!file) {
-            const creationHeight = Utils.toBigInt(metadata.rootTransaction.transactionInfo!.height!);
-            file = await this.fileEntityModel.create({
-                network,
-                name: metadata.name,
-                header: metadata.header,
-                size: metadata.size,
-                mime: metadata.mime,
-                parser: metadata.parser,
-                version: metadata.version,
-                creationHeight: creationHeight.toString(),
-                rootTransactionHash,
+    async refresh(network: Network, rootTransactionHash: string): Promise<FileEntity | undefined> {
+        try {
+            const metadata = await this.refreshS3File(network, rootTransactionHash);
+            if (!metadata) {
+                return undefined;
+            }
+            let file = await this.fileEntityModel.findOne({
+                where: { rootTransactionHash: rootTransactionHash },
             });
+            if (!file) {
+                const creationHeight = Utils.toBigInt(metadata.rootTransaction.transactionInfo!.height!);
+                file = await this.fileEntityModel.create({
+                    network,
+                    name: metadata.name,
+                    header: metadata.header,
+                    size: metadata.size,
+                    mime: metadata.mime,
+                    parser: metadata.parser,
+                    version: metadata.version,
+                    creationHeight: creationHeight.toString(),
+                    rootTransactionHash,
+                });
+            }
+            return file;
+        } catch (e) {
+            this.logger.warn(`File with hash ${rootTransactionHash} cannot be logged from network ${network}. Error ${e}`, e);
+            return undefined;
         }
-        return file;
     }
 
     async refreshS3File(network: Network, rootTransactionHash: string): Promise<FileMetadataWithTransaction | undefined> {
@@ -92,24 +96,27 @@ export class FileService {
             Bucket: s3.bucket,
             Key: key,
         });
-
         try {
             await client.send(getObjectCommand);
             this.logger.log(`Object with key ${key} does exist!`);
-            return undefined;
+            return await service.loadMetadataFromHash(rootTransactionHash);
         } catch (e) {
-            this.logger.error(e);
-            this.logger.log(`Object with key ${key} does not exist! Storing!`);
-            const file = await service.loadFileFromHash(rootTransactionHash);
-            this.logger.log(file.content.length);
-            const command = new PutObjectCommand({
-                Bucket: s3.bucket,
-                ContentType: file.metadata.mime,
-                Body: file.content,
-                Key: key,
-            });
-            await client.send(command);
-            return file.metadata;
+            if (e.name === 'NoSuchKey') {
+                this.logger.log(`Object with key ${key} does NOT exist! Storing!`);
+                const file = await service.loadFileFromHash(rootTransactionHash);
+                this.logger.log(`Storing file size ${file.content.length}`);
+                const command = new PutObjectCommand({
+                    Bucket: s3.bucket,
+                    ContentType: file.metadata.mime,
+                    Body: file.content,
+                    Key: key,
+                });
+                await client.send(command);
+                return file.metadata;
+            } else {
+                this.logger.error(`Unknown error loading S3 Object. ${e.message}`, e);
+                return undefined;
+            }
         } finally {
             client.destroy();
         }

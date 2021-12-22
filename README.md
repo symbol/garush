@@ -40,7 +40,7 @@ Public tester deployment can be found in https://tester.garush.dev
 
 ## Local Development
 
-To start all docker third party service:
+To start all docker third-party services:
 
 ```shell
 docker-compose up -d
@@ -54,15 +54,12 @@ Run the docker services:
 docker-compose up -d
 ```
 
-The first time your run the services, you need to create the minio/s3 access key.
+The first time you run the services, you need to create the minio/s3 access key:
+- Go to the Minio Console's user tab: http://localhost:9001/users (`minioadmin:minioadmin`)
+- Create a user with access and key `minioadmin1:minioadmin1`. These keys are the backend's default.
+- Give this user all the permissions. 
 
-Go to the Minio Console's user tab
-
-http://localhost:9001/users (`minioadmin:minioadmin`)
-
-And create a user with access and key `minioadmin1:minioadmin1`. These keys are the backend's default.
-
-Give this user all the permissions. TODO: Automatize the minio/s3 token for local development
+TODO: Automatize the minio/s3 token creation for local development.
 
 To run the backend:
 
@@ -77,7 +74,7 @@ Try:
 - http://localhost:3000/art
 - http://localhost:3000/file
 
-The bullmq job would be populating the database and s3 bucket from the symbol and garush networks.
+The `bullmq` job will be populating the database and s3 bucket from the Symbol and Garush networks.
 
 ## Services:
 

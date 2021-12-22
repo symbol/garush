@@ -50,8 +50,7 @@ export interface LoggerConfiguration {
 }
 
 export interface BullMQConfiguration {
-    logLevel: string;
-    logFileName: string;
+    refreshArtJobSchedulerEvery: number;
 }
 
 export interface RedisConfiguration {
@@ -105,8 +104,7 @@ export default (): Configuration => ({
         password: process.env.REDIS_PASSWORD,
     },
     bullmq: {
-        logLevel: process.env.LOGGER_LOG_LEVEL || 'info',
-        logFileName: process.env.LOGGER_LOG_FILE_NAME || 'logs/garush.log',
+        refreshArtJobSchedulerEvery: parseInt(process.env.BULLMQ_REFRESH_ART_JOB_SCHEDULER_EVERY) || 60000,
     },
 
     s3: {

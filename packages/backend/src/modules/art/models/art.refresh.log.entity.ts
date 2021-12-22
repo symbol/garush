@@ -12,6 +12,18 @@ export interface ArtRefreshLogEntityAttributes {
 @Table({
     tableName: 'art_refresh_log_entity',
     timestamps: true,
+    indexes: [
+        {
+            name: 'unique_network_fromHeight',
+            unique: true,
+            fields: ['network', 'fromHeight'],
+        },
+        {
+            name: 'unique_network_toHeight',
+            unique: true,
+            fields: ['network', 'toHeight'],
+        },
+    ],
 })
 export class ArtRefreshLogEntity extends Model<ArtRefreshLogEntityAttributes, ArtRefreshLogEntityAttributes> {
     @Column({
@@ -21,10 +33,10 @@ export class ArtRefreshLogEntity extends Model<ArtRefreshLogEntityAttributes, Ar
     })
     id?: number;
 
-    @Column({ type: DataType.BIGINT, unique: 'fromHeight_network_unique' })
+    @Column({ type: DataType.BIGINT })
     fromHeight: string;
 
-    @Column({ type: DataType.BIGINT, unique: 'toHeight_network_unique' })
+    @Column({ type: DataType.BIGINT })
     toHeight: string;
 
     @Column({})

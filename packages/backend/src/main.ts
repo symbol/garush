@@ -31,15 +31,22 @@ async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
     const configService = app.get<ConfigService<Configuration>>(ConfigService);
     const loggerConfiguration = configService.get<LoggerConfiguration>('logger');
-    const serverConfiguration = configService.get<ServerConfiguration>('server');
 
+    const appName = 'Garush';
     const logger = WinstonModule.createLogger({
         transports: [
             new winston.transports.Console({
-                format: winston.format.combine(winston.format.timestamp(), nestWinstonModuleUtilities.format.nestLike()),
+                format: winston.format.combine(
+                    winston.format.errors({ stack: true }),
+                    winston.format.timestamp(),
+                    nestWinstonModuleUtilities.format.nestLike(appName, { prettyPrint: true }),
+                ),
             }),
             new winston.transports.File({
-                format: winston.format.combine(winston.format.timestamp(), nestWinstonModuleUtilities.format.nestLike()),
+                format: winston.format.combine(
+                    winston.format.timestamp(),
+                    nestWinstonModuleUtilities.format.nestLike(appName, { prettyPrint: true }),
+                ),
                 level: loggerConfiguration.logLevel,
                 filename: loggerConfiguration.logFileName,
             }),
@@ -50,10 +57,10 @@ async function bootstrap() {
     app.use(morgan('tiny'));
     app.enableCors();
     const options = new DocumentBuilder()
-        .setTitle('Garush')
-        .setDescription('Garush API description')
+        .setTitle(appName)
+        .setDescription(appName + ' API description')
         .setVersion('0.0.1')
-        .addTag('garush')
+        .addTag(appName.toLowerCase())
         .addBearerAuth()
         .build();
     const document = SwaggerModule.createDocument(app, options);
@@ -82,6 +89,7 @@ async function bootstrap() {
             });
     }
 
+    const serverConfiguration = configService.get<ServerConfiguration>('server');
     await app.listen(serverConfiguration.port);
     logger.log(`Application is running on: ${await app.getUrl()}`);
 }
