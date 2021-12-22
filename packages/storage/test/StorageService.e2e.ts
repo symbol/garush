@@ -16,6 +16,7 @@
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import 'mocha';
+import { firstValueFrom } from 'rxjs';
 import { Account, Convert, Deadline, EmptyMessage, NetworkType, RepositoryFactoryHttp, TransferTransaction } from 'symbol-sdk';
 import { StorageService } from '../src';
 
@@ -71,7 +72,7 @@ describe('StorageService', () => {
     it('send some tokens from faucet', async () => {
         console.log(faucetAccount.address.plain());
         const deadline = Deadline.create(epochAdjustment);
-        const currency = await repositoryFactory.getCurrencies().toPromise();
+        const currency = await firstValueFrom(repositoryFactory.getCurrencies());
 
         const transfer = TransferTransaction.create(
             deadline,
@@ -84,19 +85,19 @@ describe('StorageService', () => {
     });
 
     it('load all images', async () => {
-        const metadatas = await service.loadImagesMetadata(recipientAccount.address);
+        const metadatas = await service.loadFilesMetadata(recipientAccount.address);
         console.log(metadatas);
     });
 
     it('load image', async () => {
-        const image = await service.loadImageFromHash('3DDBA6E3C08B35FE624D4801B6D376A8636999C9B03F4EA2D7560879BE43E74A');
+        const image = await service.loadFileFromHash('3DDBA6E3C08B35FE624D4801B6D376A8636999C9B03F4EA2D7560879BE43E74A');
         console.log(image.metadata.name);
         const expectedImage = await readFileSync(`${__dirname}/images/${image.metadata.name}`);
         expect(Convert.uint8ToHex(expectedImage)).eq(Convert.uint8ToHex(image.content));
     });
 
     it('loadImagesMetadata', async () => {
-        const images = await service.loadImagesMetadata(recipientAccount.address);
+        const images = await service.loadFilesMetadata(recipientAccount.address);
         console.log(images);
     });
 });

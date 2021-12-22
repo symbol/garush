@@ -37,12 +37,11 @@
     "dependencies": {
         "js-yaml": "^4.1.0",
         "lodash": "^4.17.21",
-        "rxjs": "^6.6.3",
-        "symbol-sdk": "^1.0.3-message-improvement-202111021446"
+        "rxjs": "^7.4.0",
+        "symbol-sdk": "^1.0.4-alpha-202112211435"
     },
     "devDependencies": {
         "@types/chai": "^4.2.12",
-        "@types/inquirer": "^7.3.1",
         "@types/js-yaml": "^4.0.3",
         "@types/lodash": "^4.14.176",
         "@types/memorystream": "^0.3.0",
@@ -50,12 +49,12 @@
         "@types/node": "^10.17.28",
         "@types/semver": "^7.3.6",
         "@types/winston": "^2.4.4",
-        "@typescript-eslint/eslint-plugin": "^4.33.0",
-        "@typescript-eslint/parser": "^4.33.0",
+        "@typescript-eslint/eslint-plugin": "^5.0.0",
+        "@typescript-eslint/parser": "^5.0.0",
         "chai": "^4.2.0",
         "coveralls": "^3.1.0",
-        "create-ts-index": "^1.13.6",
-        "eslint": "^7.11.0",
+        "create-ts-index": "^1.13.7",
+        "eslint": "^8.0.1",
         "eslint-config-prettier": "^8.3.0",
         "eslint-plugin-prettier": "^4.0.0",
         "globby": "^10.0.2",

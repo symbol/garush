@@ -8,3 +8,6 @@
 **/ts-docs/
 *.iml
 
+/docker-data
+/packages/*/dist/
+/packages/*/logs/

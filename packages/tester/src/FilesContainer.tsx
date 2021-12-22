@@ -1,7 +1,7 @@
-import { FileMetadata, Logger } from 'garush-storage';
+import { FileMetadataWithTransaction, Logger } from 'garush-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Button } from 'react-bootstrap';
-import { Convert, KeyPair, Transaction } from 'symbol-sdk';
+import { Convert, KeyPair } from 'symbol-sdk';
 import { ConfigurationContext, Network } from './App';
 import ConfigurationContainer from './ConfigurationContainer';
 import FileList from './FileList';
@@ -15,12 +15,12 @@ export const LoggerContext = createContext<Logger>({
 export default function FilesContainer({ network }: { network: Network }) {
     const { storageService, artistPrivateKey } = useContext(ConfigurationContext)[network];
     const publicAccount = Convert.uint8ToHex(KeyPair.createKeyPairFromPrivateKeyString(artistPrivateKey).publicKey);
-    const [files, setFiles] = useState<{ metadata: FileMetadata; rootTransaction: Transaction }[] | undefined>(undefined);
+    const [files, setFiles] = useState<FileMetadataWithTransaction[] | undefined>(undefined);
     const refresh = () => {
-        storageService.loadImagesMetadata(publicAccount).then(setFiles);
+        storageService.loadFilesMetadata(publicAccount).then(setFiles);
     };
     useEffect(() => {
-        storageService.loadImagesMetadata(publicAccount).then(setFiles);
+        storageService.loadFilesMetadata(publicAccount).then(setFiles);
     }, [storageService, publicAccount]);
 
     return (

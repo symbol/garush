@@ -1,4 +1,5 @@
 import { FileMetadata, Utils, YamlUtils } from 'garush-storage';
+import _ from 'lodash';
 import React, { useContext, useState } from 'react';
 import { Stack } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
@@ -34,7 +35,7 @@ export default function FileExplorer() {
         <Site>
             <Stack gap={3} direction="vertical">
                 <FilePanel metadata={file} network={network} />
-                <pre>{YamlUtils.toYaml(metadata)}</pre>
+                <pre>{YamlUtils.toYaml(_.omit(metadata, 'rootTransaction'))}</pre>
                 <div>
                     Root Transaction:{' '}
                     <a
@@ -47,7 +48,7 @@ export default function FileExplorer() {
                     </a>
                     {hashes.map((dataHash, dataIndex) => {
                         return (
-                            <div key={dataIndex}>
+                            <div key={dataHash}>
                                 Data Transaction {dataIndex + 1}: <a href={`${explorerUrl}/transactions/${dataHash}`}>{dataHash}</a>
                             </div>
                         );

@@ -1,0 +1,35 @@
+version: '3.7'
+services:
+    minio:
+        image: minio/minio
+        volumes:
+            - './docker-data/minio:/data'
+        ports:
+            - '9000:9000'
+            - '9001:9001'
+        command: server /data  --console-address ":9001"
+    db:
+        image: 'postgres:13'
+        ports:
+            - '5432:5432'
+        volumes:
+            - ./docker-data/pgdata:/var/lib/postgresql/data
+        environment:
+            - POSTGRES_USER=admin
+            - POSTGRES_PASSWORD=admin
+            - POSTGRES_DB=garush
+    redis:
+        image: "redis:latest"
+        ports:
+          - "6379:6379"
+        volumes:
+          - ./docker-data/redis:/data
+    bullboard:
+        image: "mikek90/bull-board"
+        restart: always
+        ports:
+          - 3003:3000
+        environment:
+          - REDIS_URL=redis://redis:6379/0
+        depends_on:
+          - redis

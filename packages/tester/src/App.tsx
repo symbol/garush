@@ -1,8 +1,9 @@
-import { NFTService, StorageService } from 'garush-storage';
+import { NFTService, SearchService, StorageService } from 'garush-storage';
 import React, { createContext } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { Convert, Crypto, NetworkType, RepositoryFactory, RepositoryFactoryHttp } from 'symbol-sdk';
 import './App.css';
+import Dashboard from './Dashboard';
 import FileExplorer from './FileExplorer';
 import HomePage from './HomePage';
 import { URLHelpers } from './URLHelpers';
@@ -68,6 +69,7 @@ const configuration: Record<
         repositoryFactory: RepositoryFactory;
         networkType: NetworkType;
         storageService: StorageService;
+        searchService: SearchService;
     }
 > = {
     [Network.garush]: {
@@ -79,6 +81,7 @@ const configuration: Record<
         repositoryFactory: garushRepositoryFactory,
         networkType: garushNetworkType,
         storageService: new StorageService(garushRepositoryFactory),
+        searchService: new SearchService(garushRepositoryFactory),
     },
     [Network.symbol]: {
         ...networksAccounts[Network.symbol],
@@ -89,6 +92,7 @@ const configuration: Record<
         repositoryFactory: symbolRepositoryFactory,
         networkType: symbolNetworkType,
         storageService: new StorageService(symbolRepositoryFactory),
+        searchService: new SearchService(symbolRepositoryFactory),
     },
 };
 export const ConfigurationContext = createContext(configuration);
@@ -106,6 +110,7 @@ export default function App() {
                     <Switch>
                         <Route exact path="/" component={HomePage} />
                         <Route exact path="/explorer/:network/:transactionRootHash" component={FileExplorer} />
+                        <Route exact path="/dashboard/:network" component={Dashboard} />
                     </Switch>
                 </Router>
             </ConfigurationContext.Provider>
