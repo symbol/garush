@@ -13,6 +13,69 @@
  * See the License for the specific language governing permissions and limitations under the License.
  *
  */
-export default function createPage() {
-    return <div>Create page</div>;
+import Traits, { TraitType } from '@components/Traits/Traits';
+import React from 'react';
+import { Form, Button, Container } from 'react-bootstrap';
+
+interface CreatePageProps {}
+
+export default function createPage(props: CreatePageProps) {
+    return (
+        <Container>
+            <h2>Create New Item</h2>
+            <Form>
+                <Form.Group className="mb-3" controlId="formFile">
+                    <Form.Label>PNG Image</Form.Label>
+                    <Form.Control type="file" placeholder="Click select button or drag and drop the file here" />
+                    <Form.Text className="text-muted">Max File Size: 100 MB</Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="formName">
+                    <Form.Label>Name</Form.Label>
+                    <Form.Control type="input" placeholder="Item name" required />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="formDescription" required>
+                    <Form.Label>Description</Form.Label>
+                    <Form.Control
+                        type="input"
+                        as="textarea"
+                        placeholder="Provide a detailed description of your item"
+                        aria-describedby="descriptionHelp"
+                    />
+                    <Form.Text id="descriptionHelp" muted>
+                        The description will be included on the item&apos;s detail page underneath its image. Markdown syntax is supported.
+                    </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="formExternalLink">
+                    <Form.Label>External Link</Form.Label>
+                    <Form.Control type="input" placeholder="https://my-awesome-site/item/123" aria-describedby="externalLinkHelp" />
+                    <Form.Text id="externalLinkHelp" muted>
+                        Garush will include a link to this URL on this item&apos;s detail page, so that users can click to learn more about
+                        it. You are welcome to link to your own webpage with more details.
+                    </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="formCollection">
+                    <Form.Label>Collection</Form.Label>
+                    <Form.Select size="lg" aria-describedby="collectionHelp">
+                        <option>Collection 1</option>
+                        <option>Collection 2</option>
+                    </Form.Select>
+                    <Form.Text id="collectionHelp" muted>
+                        This is the collection where your item will be displayed.
+                    </Form.Text>
+                </Form.Group>
+
+                <Traits type={TraitType.text} />
+                <Traits type={TraitType.numeric} />
+                <Traits type={TraitType.stats} />
+
+                <Button variant="primary" type="submit">
+                    Submit
+                </Button>
+            </Form>
+        </Container>
+    );
 }

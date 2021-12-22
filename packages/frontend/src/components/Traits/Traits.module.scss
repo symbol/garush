@@ -1,0 +1,77 @@
+.traitsContainer {
+    border-bottom: 1px solid #e4e6eb;
+    margin-bottom: 1rem !important;
+}
+.traitsItem {
+    display: flex;
+    -webkit-box-pack: justify;
+    justify-content: space-between;
+}
+.traitsItemContent {
+    display: flex;
+    & div {
+        margin-left: 1rem;
+    }
+}
+.textualTraitsItemList {
+    display: flex;
+    > a {
+        color: rgb(32, 129, 226);
+        text-decoration: none;
+
+        > div:first-of-type {
+            margin: 0.5rem;
+            background-color: rgba(21, 178, 229, 0.06);
+            border-radius: 6px;
+            border: 1px solid rgb(21, 178, 229);
+            padding: 10px;
+            text-align: center;
+            width: 9rem;
+        }
+    }
+}
+.numericTraitsItemList {
+    display: block;
+    > a {
+        color: rgb(32, 129, 226);
+        text-decoration: none;
+    }
+}
+.numericTraitsItemList_item {
+    cursor: pointer;
+    border-radius: 10px;
+    border: 1px solid rgb(229, 232, 235);
+    padding: 0.5rem 1rem;
+    max-width: 428px;
+    margin: 0.5rem;
+    min-width: 30rem;
+}
+.numericTraitsItemList_item_label {
+    display: flex;
+    font-weight: 500;
+    -webkit-box-pack: justify;
+    justify-content: space-between;
+}
+.numericTraitsItemList_item_label_type {
+    color: rgb(112, 122, 131);
+}
+.numericTraitsItemList_item_label_value {
+    color: rgb(112, 122, 131);
+    min-width: fit-content;
+    padding-left: 4px;
+}
+.numericTraitsItemList_item_bar {
+    background-color: rgb(251, 253, 255);
+    border: 1px solid rgb(229, 232, 235);
+    border-radius: 1rem;
+    height: 1rem;
+    margin-top: 0.4rem;
+    overflow: hidden;
+}
+.numericTraitsItemList_item_barFill {
+    background-color: rgb(32, 129, 226);
+    height: 100%;
+}
+.addMore {
+    margin-top: 1rem !important;
+}

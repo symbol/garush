@@ -2,7 +2,6 @@
 @import 'bootstrap/scss/_functions';
 
 // nav
-
 $nav-tabs-border-width: 0;
 $nav-link-padding-y: 0.8rem;
 $nav-link-padding-x: 4rem;
@@ -31,6 +30,10 @@ $card-bg: #e4e6eb;
     $nav-link-hover-color: #99a3a8;
     // card
     $card-bg: #252d3e;
+
+    // modal
+    $modal-content-color: #eeeeee;
+    $modal-content-bg: #252d3e;
 
     $theme-colors: (
         'primary': $primary,
